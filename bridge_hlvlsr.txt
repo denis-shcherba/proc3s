@@ -1,0 +1,12 @@
+```python
+def gen_plan(state: BridgeState):
+
+    # Build the bridge
+    actions = []
+    action = Action("pick", ["block_red"])
+    actions.append(action)
+    action = Action("place", [0.1, 0.4, None, None, None, None])
+    actions.append(action)
+    
+    return actions
+```

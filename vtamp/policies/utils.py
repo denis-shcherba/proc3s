@@ -23,7 +23,8 @@ log = logging.getLogger(__name__)
 env_file = os.path.join(pathlib.Path(__file__).parent.parent.parent, ".env")
 dotenv.load_dotenv(env_file, override=True)
 openai_api_key = os.environ.get("OPENAI_KEY")
-openai_client = OpenAI(api_key=openai_api_key)
+print(openai_api_key)
+# openai_client = OpenAI(api_key=openai_api_key)
 
 ENGINE = "gpt-4-0125-preview"  # "gpt-4-turbo-2024-04-09" #"gpt-4-0125-preview"  #'gpt-3.5-turbo-instruct'
 # ENGINE = "gpt-4o"

@@ -43,7 +43,6 @@ def parse_text_prompt(text_prompt_path):
     current_role = None
     current_content = []
     prompt_elements = get_prompt_element_map()
-
     with open(text_prompt_path, "r") as file:
         template = file.read()
         rendered = pystache.render(template, prompt_elements)

@@ -49,10 +49,10 @@ class LLM3(Policy):
         **kwargs,
     ):
         self.twin = twin
-        self.max_csp_samples = max_csp_samples
-        self.gaussian_blur = gaussian_blur
         self.seed = seed
         self.max_feedbacks = max_feedbacks
+        self.gaussian_blur = gaussian_blur
+        self.max_csp_samples = max_csp_samples
 
         import_constants_from_class(twin.__class__)
 

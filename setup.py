@@ -33,6 +33,8 @@ setup(
         "clip @ git+https://github.com/openai/CLIP.git#egg=clip",
         "hydra_colorlog==1.2.0",
         "pystache==0.6.5",
-        "trimesh==4.4.9"
+        "trimesh==4.4.9",
+        "robotic==0.2.7",
+        "rowan==1.3.2",
     ],
 )

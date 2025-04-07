@@ -1,0 +1,5 @@
+Action("pick", [frame_name])
+Grab the frame with name frame_name.
+
+Action("place", [x, y, z, rot_x, rot_y, rot_z])
+Place grasped object at pose x, y, z, rot_x, rot_y, rot_z. If any of the rotations is set to None, it will not constrain the object to have a specific rotation in that axis.

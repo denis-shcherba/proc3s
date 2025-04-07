@@ -1,7 +1,7 @@
-CATEGORIES = ["block"]
-TABLE_BOUNDS = [[-0.55, 0.55], [-0.6, 0.6], [0, 0]]  # X Y Z
-TABLE_CENTER = [0, 0, 0]
-BLOCK_DIMENSIONS = [0.04, 0.04, 0.12]
+CATEGORIES = ["bowl", "block"]
+TABLE_BOUNDS = [[-0.3, 0.3], [-0.8, -0.2], [0, 0]]  # X Y Z
+TABLE_CENTER = [0, -0.5, 0]
+BLOCK_SIZE = 0.04
 
 @dataclass
 class RavenPose:
@@ -19,7 +19,7 @@ class RavenPose:
     @property
     def euler(self):
         ...
-
+    
 @dataclass
 class RavenObject:
     category: str
@@ -41,18 +41,6 @@ class ContinuousSampler:
         return random.uniform(self.min, self.max)
 
 @dataclass
-class DiscreteSampler:
-    values: List[int]
-
-    def sample(self):
-        return random.choice(self.values)
-
-@dataclass
 class Action:
     name: str
     params: List[float]
-
-@dataclass
-class GraspSampler(Sampler):
-    def sample(self) -> RavenGrasp:
-        ...

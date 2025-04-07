@@ -1,7 +1,0 @@
-Action("pick", [frame_name])
-grab the frame with name frame name
-
-Action("place", [o, g, p])
-If holding an object o at grasp g, place the object at pose p.
-
-
