@@ -1,0 +1,36 @@
+```python
+def gen_plan(state:BridgeState, center_x: float, center_y: float, center_phi: float):
+    
+    import numpy as np
+
+    actions = []
+    
+    block_size_y = state.getFrame("block_red").y_size
+    block_size_x = state.getFrame("block_red").x_size
+
+    # Red #
+    pos_x_red = -np.sin(center_phi) * (block_size_y+block_size_x) * .5 + center_x
+    pos_y_red = np.cos(center_phi) * (block_size_y+block_size_x) * .5 + center_y
+
+    actions.append(Action("pick", ["block_red", None]))
+    actions.append(Action("place_sr", [pos_x_red, pos_y_red, None, None, center_phi+np.pi/2]))
+
+    # Green #
+    actions.append(Action("pick", ["block_green", None]))
+    actions.append(Action("place_sr", [center_x, center_y, None, None, center_phi]))
+
+    # Blue #
+    pos_x_blue = np.sin(center_phi) * (block_size_y+block_size_x) * .5 + center_x
+    pos_y_blue = -np.cos(center_phi) * (block_size_y+block_size_x) * .5 + center_y
+
+    actions.append(Action("pick", ["block_blue", None]))
+    actions.append(Action("place_sr", [pos_x_blue, pos_y_blue, None, None, center_phi+np.pi/2]))
+    return actions
+
+def gen_domain(initial: BridgeState):
+    return {
+        "center_x": .0, # BBO initial value
+        "center_y": .2, 
+        "center_phi": .1
+    }
+```

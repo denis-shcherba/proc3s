@@ -86,8 +86,31 @@ def create_config() -> ry.Config:
     
     return C
 
+def create_horizontal_config() -> ry.Config:
+    #TODO more center, more space between blocks, make blocks on table 
+    C = ry.Config()
+    C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
+
+    C.delFrame("panda_collCameraWrist")
+    C.getFrame("table").setShape(ry.ST.ssBox, size=[1., 1., .1, .02])
+
+    names = ["red", "green", "blue"]
+
+    # Objects
+    for i in range(3):
+        color = [0., 0., 0.]
+        color[i%3] = 1.
+        C.addFrame(f"block_{names[i]}") \
+            .setPosition([(i%3)*.15, (i//3)*.1+.1, .71]) \
+            .setShape(ry.ST.ssBox, size=[.04, .12, .04, 0.005]) \
+            .setColor(color) \
+            .setContact(1) \
+            .setMass(.1)
+    
+    return C
 
 class BuildPlanarTriangle(Task):
+    #TODO prolly
     def __init__(self, goal_str: str, **kwargs):
         self.goal_str = goal_str
 
@@ -95,7 +118,7 @@ class BuildPlanarTriangle(Task):
         return self.goal_str
 
     def setup_env(self):
-        return create_config()
+        return create_horizontal_config()
 
     def get_reward(self, env: BridgeEnv):
         return 0
@@ -128,7 +151,7 @@ class TestTask(Task):
         return self.goal_str
 
     def setup_env(self):
-        return create_config()
+        return create_horizontal_config()
 
     def get_reward(self, env: BridgeEnv):
         return 0
@@ -145,7 +168,7 @@ class TestTask(Task):
         return total_cost[0]
 
 class BuildPlanarI(Task):
-    # TODO
+    # TODO look into CMA-Es issue, doesnt output the best solution but the last
     def __init__(self, goal_str: str, **kwargs):
         self.goal_str = goal_str
 
@@ -153,21 +176,25 @@ class BuildPlanarI(Task):
         return self.goal_str
 
     def setup_env(self):
-        return create_config()
-
+        return create_horizontal_config()
+    
     def get_reward(self, env: BridgeEnv):
-        red_block = env.C.getFrame("block_red")
-        green_block = env.C.getFrame("block_green")
-        blue_block = env.C.getFrame("block_blue")
-
-        red_block_error = 0
-        green_block_error = 0
-        blue_block_error = 0
-
-        green_block += np.abs(env.C.eval(ry.FS.scalarProductXX, ["green_block", "red_block"])[0][0])
-        blue_block_error += np.abs(env.C.eval(ry.FS.scalarProductXY, ["blue_block", "red_block"])[0][0])
-        total_cost = red_block_error + green_block_error + blue_block_error
+        return 0
+    
+    def get_cost(self, env: BridgeEnv):
+        red_block_error = np.abs(env.C.eval(ry.FS.scalarProductXX, ["block_red", "block_green"])[0][0])
+        green_block_error = np.abs(env.C.eval(ry.FS.scalarProductXX, ["block_green", "block_blue"])[0][0])
+        blue_block_error = np.abs(env.C.eval(ry.FS.scalarProductXY, ["block_blue", "block_red"])[0][0])
         
+        # alignment things
+        green_block_error += 10 * (np.abs(np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][0])-.08)+np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][1]))
+
+        total_cost = red_block_error + green_block_error + blue_block_error
+
+        if total_cost<.01:
+            env.C.view(True)
+
+
         return total_cost
     
 
