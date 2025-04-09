@@ -1,5 +1,5 @@
 ```python
-def gen_plan(initial:BridgeState, center_x: float, center_y: float, center_phi: float):
+def gen_plan(initial:BridgeState, x_offset1: float, y_offset1: float, x_offset2: float, y_offset2: float, x_offset3: float, y_offset3: float):
     
     import numpy as np
 
@@ -7,21 +7,24 @@ def gen_plan(initial:BridgeState, center_x: float, center_y: float, center_phi: 
     
     # Red #
     actions.append(Action("pick", ["block_red", None]))
-    actions.append(Action("place_sr", [pos_x, pos_y, None, None, 0]))
+    actions.append(Action("place_sr", [x_offset1, y_offset1, None, None, 0]))
 
     # Green #
     actions.append(Action("pick", ["block_green", None]))
-    actions.append(Action("place_sr", [pos_x, pos_y, None, None, 2*np.pi/3]))
+    actions.append(Action("place_sr", [x_offset2, y_offset2, None, None, np.pi/3]))
 
     # Blue #
     actions.append(Action("pick", ["block_blue", None]))
-    actions.append(Action("place_sr", [pos_x, pos_y, None, None, 2*np.pi/2]))
+    actions.append(Action("place_sr", [x_offset3, y_offset3, None, None, 2*np.pi/3]))
     return actions
 
 def gen_domain(initial: BridgeState):
     return {
-        "center_x": .2, # BBO initial value
-        "center_y": .2,
-        "center_phi": .0,
+        "x_offset1": .0, # BBO initial value
+        "y_offset1": .2, 
+        "x_offset2": .2, # BBO initial value
+        "y_offset2": .3,
+        "x_offset3": .2, # BBO initial value
+        "y_offset3": .4,  
     }
 ```

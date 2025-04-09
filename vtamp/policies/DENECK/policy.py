@@ -183,7 +183,7 @@ class DENECK(Policy):
         # TODO: use_cache
         # llm_response, statistics["llm_query_time"] = query_llm(chat_history, seed=0)
         #####################################################
-        llm_response = open("./bridge_hlvlsr_bbo.txt", 'r').read()
+        llm_response = open("./triangle_hlvlsr_bbo.txt", 'r').read()
         llm_query_time = 0
         #####################################################
         

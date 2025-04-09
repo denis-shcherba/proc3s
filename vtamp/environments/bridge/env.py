@@ -88,7 +88,6 @@ def create_config() -> ry.Config:
 
 
 class BuildPlanarTriangle(Task):
-    # TODO
     def __init__(self, goal_str: str, **kwargs):
         self.goal_str = goal_str
 
@@ -98,51 +97,52 @@ class BuildPlanarTriangle(Task):
     def setup_env(self):
         return create_config()
 
-    def get_reward_(self, env: BridgeEnv):
-        red_block = env.C.getFrame("block_red")
-        green_block = env.C.getFrame("block_green")
-        blue_block = env.C.getFrame("block_blue")
+    def get_reward(self, env: BridgeEnv):
+        return 0
+    
+    def get_cost(self, env: BridgeEnv):
 
-        red_block_error = 0
-        green_block_error = 0
-        blue_block_error = 0
+            red_block_error = np.abs(env.C.eval(ry.FS.positionRel, ["block_red", "block_green"])[0][0]-env.C.eval(ry.FS.positionRel, ["block_red", "block_blue"])[0][0])
+            green_block_error = np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][0]-env.C.eval(ry.FS.positionRel, ["block_green", "block_blue"])[0][0])
+            blue_block_error = np.abs(env.C.eval(ry.FS.positionRel, ["block_blue", "block_red"])[0][0]-env.C.eval(ry.FS.positionRel, ["block_blue", "block_green"])[0][0])
 
-        # Positions
-        green_block_error += np.abs(np.linalg.norm(green_block.getPosition() - red_block.getPosition()) - 0.12)
-        blue_block_error += np.abs((blue_block.getPosition()[2] - red_block.getPosition()[2]) - .06 - .02)
-
-        # Rotations
-        blue_block_error += np.abs(env.C.eval(ry.FS.scalarProductZZ, ["block_blue", "table"])[0][0])
-        total_cost = red_block_error + green_block_error + blue_block_error
-        
-        return total_cost
-
-    def get_reward_(self, env: BridgeEnv):
-
-            red_block = env.C.getFrame("block_red")
-            green_block = env.C.getFrame("block_green")
-            blue_block = env.C.getFrame("block_blue")
-
-
-            red_block_error = np.abs(env.C.eval(ry.FS.positionRel, [red_block, green_block])[0][0]-env.C.eval(ry.FS.positionRel, [red_block, blue_block])[0][0])
-            green_block_error = np.abs(env.C.eval(ry.FS.positionRel, [green_block, red_block])[0][0]-env.C.eval(ry.FS.positionRel, [green_block, blue_block])[0][0])
-            blue_block_error = np.abs(env.C.eval(ry.FS.positionRel, [blue_block, red_block])[0][0]-env.C.eval(ry.FS.positionRel, [blue_block, green_block])[0][0])
-
-            red_block_error += np.abs(env.C.eval(ry.FS.positionRel, [red_block, green_block])[0][1]+env.C.eval(ry.FS.positionRel, [red_block, blue_block])[0][1])
-            green_block_error += np.abs(env.C.eval(ry.FS.positionRel, [green_block, red_block])[0][1]+env.C.eval(ry.FS.positionRel, [green_block, blue_block])[0][1])
-            blue_block_error += np.abs(env.C.eval(ry.FS.positionRel, [blue_block, red_block])[0][1]+env.C.eval(ry.FS.positionRel, [blue_block, green_block])[0][1])
+            red_block_error += np.abs(env.C.eval(ry.FS.positionRel, ["block_red", "block_green"])[0][1]+env.C.eval(ry.FS.positionRel, ["block_red", "block_blue"])[0][1])
+            green_block_error += np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][1]+env.C.eval(ry.FS.positionRel, ["block_green", "block_blue"])[0][1])
+            blue_block_error += np.abs(env.C.eval(ry.FS.positionRel, ["block_blue", "block_red"])[0][1]+env.C.eval(ry.FS.positionRel, ["block_blue", "block_green"])[0][1])
 
             # Distance of one cm between triangle sides
-            red_block_error += 30*(env.C.eval(ry.FS.negDistance, [red_block, green_block])[0]+.01)**2
-            green_block_error += 30*(env.C.eval(ry.FS.negDistance, [green_block, blue_block])[0]+.01)**2
-            blue_block_error += 30*(env.C.eval(ry.FS.negDistance, [blue_block, green_block])[0]+.01)**2
+            red_block_error += 30*(env.C.eval(ry.FS.negDistance, ["block_red", "block_green"])[0]+.01)**2
+            green_block_error += 30*(env.C.eval(ry.FS.negDistance, ["block_green", "block_blue"])[0]+.01)**2
+            blue_block_error += 30*(env.C.eval(ry.FS.negDistance, ["block_blue", "block_green"])[0]+.01)**2
 
-            total_cost = red_block_error + green_block_error + blue_block
+            total_cost = red_block_error + green_block_error + blue_block_error
         
-            print("+-------------------------------+")
-            print("Total cost: ", total_cost)
-            print("+-------------------------------+")
             return total_cost
+    
+
+class TestTask(Task):
+    def __init__(self, goal_str: str, **kwargs):
+        self.goal_str = goal_str
+
+    def get_goal(self):
+        return self.goal_str
+
+    def setup_env(self):
+        return create_config()
+
+    def get_reward(self, env: BridgeEnv):
+        return 0
+    
+    def get_cost(self, env: BridgeEnv):
+
+        red_block_error = 30*(env.C.eval(ry.FS.negDistance, ["block_red", "block_green"])[0]+.04)**2
+        green_block_error = 30*(env.C.eval(ry.FS.negDistance, ["block_green", "block_blue"])[0]+.04)**2
+
+        blue_block_error = 10*(env.C.eval(ry.FS.positionDiff, ["block_blue", "block_green"])[0][1])**2
+        green_block_error += 10*(env.C.eval(ry.FS.positionDiff, ["block_green", "block_red"])[0][1])**2
+
+        total_cost = red_block_error + green_block_error + blue_block_error
+        return total_cost[0]
 
 class BuildPlanarI(Task):
     # TODO
@@ -230,7 +230,7 @@ class BridgeEnv(Environment):
 
         super().__init__(task)
 
-        self.compute_collisions = True
+        self.compute_collisions = False
         
         self.base_config: ry.Config = self.task.setup_env()
         self.base_config.view(False, "Base Config")
@@ -307,7 +307,7 @@ class BridgeEnv(Environment):
             self.feasible = False
 
             M = manip.ManipulationModelling()
-            M.setup_sequence(self.C, 1, accumulated_collisions=False, joint_limits=False, homing_scale=.1)
+            M.setup_sequence(self.C, 1, accumulated_collisions=self.compute_collisions, joint_limits=False, homing_scale=.1)
             
             if z == None:
                 M.place_box(1., self.grabbed_frame, "table", "l_palm", place_direction)
@@ -375,7 +375,7 @@ class BridgeEnv(Environment):
             for i, direction in enumerate(place_direction):
                 for j in range(2 if yaw is not None else 1):
                     M = manip.ManipulationModelling()
-                    M.setup_sequence(self.C, 1, accumulated_collisions=False, joint_limits=False, homing_scale=.1)
+                    M.setup_sequence(self.C, 1, accumulated_collisions=self.compute_collisions, joint_limits=False, homing_scale=.1)
 
                     if z == None:
                         M.place_box(1., self.grabbed_frame, "table", "l_palm", direction)

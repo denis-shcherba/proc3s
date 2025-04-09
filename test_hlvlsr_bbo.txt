@@ -1,0 +1,26 @@
+```python
+def gen_plan(initial:BridgeState, offset_x: float, offset_y: float):
+    
+    import numpy as np
+
+    actions = []
+    
+    # Red #
+    actions.append(Action("pick", ["block_red", None]))
+    actions.append(Action("place_sr", [offset_x, offset_y, None, None, 0]))
+
+    # Green #
+    actions.append(Action("pick", ["block_green", None]))
+    actions.append(Action("place_sr", [offset_x+.08, offset_y, None, None, 0]))
+
+    # Blue #
+    actions.append(Action("pick", ["block_blue", None]))
+    actions.append(Action("place_sr", [offset_x+.16, offset_y, None, None, 0]))
+    return actions
+
+def gen_domain(initial: BridgeState):
+    return {
+        "offset_x": .0, # BBO initial value
+        "offset_y": .2, 
+    }
+```
