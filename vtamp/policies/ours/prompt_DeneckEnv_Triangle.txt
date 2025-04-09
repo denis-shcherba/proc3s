@@ -1,0 +1,60 @@
+#define system
+{{{system_prompt}}}
+
+{{{bridge_setup_code}}}
+
+{{{bridge_skill_preface}}}
+
+{{{bride_skills_sr}}}
+
+{{{ours_role}}}
+
+#define user
+State: DeneckBelieve({"block_red": Object(category="block_red", color="red", position=[0.04, -0.36, 0.02]), "block_green": Object(category="block_green", color="green", position=[0.04, -0.36, 0.02]), "block_blue": Object(category="block_blue", color="blue", position=[0.04, -0.36, 0.02]), "block_3": Object(category="block_blue", color="blue", position=[0.04, -0.36, 0.02])})
+Goal: Build a planar roman numeral one with the three blocks
+
+#define assistant
+```python
+def gen_plan(initial:DeneckBelieve, numeral_1_x: float, numeral_1_y:float, numeral_1_yaw:float):
+    plan = []
+    
+    plan.append(Action("pick", [DeneckBelieve.frame_names[0]]))
+    plan.append(Action("place", [DeneckBelieve.frame_names[0], numeral_1_offset_x, numeral_1_offset_y, 0, yaw=numeral_1_yaw]))
+    plan.append(Action("pick", [DeneckBelieve.frame_names[1]]))
+    plan.append(Action("place", [DeneckBelieve.frame_names[1], numeral_1_offset_x+np.cos(yaw)*0.08, numeral_1_offset_y-np.sin(yaw)*0.08, None, yaw=np.pi+numeral_1_yaw]))
+    plan.append(Action("pick", [DeneckBelieve.frame_names[2]]))
+    plan.append(Action("place", [DeneckBelieve.frame_names[2], numeral_1_offset_x+np.cos(yaw)*0.16, numeral_1_offset_y-np.sin(yaw)*0.16, None, yaw=numeral_1_yaw]))
+    return plan
+
+def gen_domain(initial:RavenBelief):
+    return {
+        "numeral_1_offset_x": ContinuousSampler(TABLE_BOUNDS[0][0], TABLE_BOUNDS[0][1]),
+        "numeral_1_offset_y": ContinuousSampler(TABLE_BOUNDS[1][0], TABLE_BOUNDS[1][1]),
+        "numeral_1_yaw": ContinuousSampler(0, 2*3.1415926535)
+    }
+```
+
+#define user
+State: DeneckBelieve({"block_red": Object(category="block_red", color="red", position=[0.04, -0.36, 0.02]), "block_green": Object(category="block_green", color="green", position=[0.04, -0.36, 0.02]), "block_blue": Object(category="block_blue", color="blue", position=[0.04, -0.36, 0.02]), "block_3": Object(category="block_blue", color="blue", position=[0.04, -0.36, 0.02])})
+Goal: Build an L-shape in 3d (not planarly on the table) out of the three blocks
+
+#define assistant
+```python
+def gen_plan(initial:DeneckBelieve, L_x: float, L_y:float, z_offset:float, L_yaw:float):
+    plan = []
+    
+    plan.append(Action("pick", [DeneckBelieve.frame_names[0]]))
+    plan.append(Action("place", [DeneckBelieve.frame_names[0], L_x, numeral_1_offset_y, 0, rotated=False, yaw=L_yaw]))
+    plan.append(Action("pick", [DeneckBelieve.frame_names[1]]))
+    plan.append(Action("place", [DeneckBelieve.frame_names[1], L_x+np.cos(yaw)*0.08, numeral_1_offset_y-np.sin(yaw)*0.08, None, rotated=False, yaw=L_yaw]))
+    plan.append(Action("pick", [DeneckBelieve.frame_names[2]]))
+    plan.append(Action("place", [DeneckBelieve.frame_names[2], L_x+np.cos(yaw)*0.16, numeral_1_offset_y-np.sin(yaw)*0.16, .08+z_offset, rotated=False, yaw=L_yaw]))
+    return plan
+
+def gen_domain(initial:RavenBelief):
+    return {
+        "numeral_1_offset_x": ContinuousSampler(TABLE_BOUNDS[0][0], TABLE_BOUNDS[0][1]),
+        "numeral_1_offset_y": ContinuousSampler(TABLE_BOUNDS[1][0], TABLE_BOUNDS[1][1]),
+        "numeral_1_yaw": ContinuousSampler(0, 2*3.1415926535)
+    }
+```

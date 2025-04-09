@@ -87,6 +87,64 @@ def create_config() -> ry.Config:
     return C
 
 
+class BuildPlanarTriangle(Task):
+    # TODO
+    def __init__(self, goal_str: str, **kwargs):
+        self.goal_str = goal_str
+
+    def get_goal(self):
+        return self.goal_str
+
+    def setup_env(self):
+        return create_config()
+
+    def get_reward(self, env: BridgeEnv):
+        red_block = env.C.getFrame("block_red")
+        green_block = env.C.getFrame("block_green")
+        blue_block = env.C.getFrame("block_blue")
+
+        red_block_error = 0
+        green_block_error = 0
+        blue_block_error = 0
+
+        # Positions
+        green_block_error += np.abs(np.linalg.norm(green_block.getPosition() - red_block.getPosition()) - 0.12)
+        blue_block_error += np.abs((blue_block.getPosition()[2] - red_block.getPosition()[2]) - .06 - .02)
+
+        # Rotations
+        blue_block_error += np.abs(env.C.eval(ry.FS.scalarProductZZ, ["block_blue", "table"])[0][0])
+        total_cost = red_block_error + green_block_error + blue_block_error
+        
+        return total_cost
+
+class BuildPlanarI(Task):
+    # TODO
+    def __init__(self, goal_str: str, **kwargs):
+        self.goal_str = goal_str
+
+    def get_goal(self):
+        return self.goal_str
+
+    def setup_env(self):
+        return create_config()
+
+    def get_reward(self, env: BridgeEnv):
+        red_block = env.C.getFrame("block_red")
+        green_block = env.C.getFrame("block_green")
+        blue_block = env.C.getFrame("block_blue")
+
+        red_block_error = 0
+        green_block_error = 0
+        blue_block_error = 0
+
+        green_block += np.abs(env.C.eval(ry.FS.scalarProductXX, ["green_block", "red_block"])[0][0])
+        blue_block_error += np.abs(env.C.eval(ry.FS.scalarProductXY, ["blue_block", "red_block"])[0][0])
+        total_cost = red_block_error + green_block_error + blue_block_error
+        
+        return total_cost
+    
+
+
 class BuildBridge(Task):
     def __init__(self, goal_str: str, **kwargs):
         self.goal_str = goal_str
@@ -268,7 +326,73 @@ class BridgeEnv(Environment):
                     self.feasible = True
         
         elif action.name == "place_sr":
-            raise NotImplementedError
+            assert self.grabbed_frame != ""
+
+            x = action.params[0]
+            y = action.params[1]
+            z = action.params[2]
+            rotated = action.params[3]
+            yaw = action.params[4]
+
+
+            if rotated and self.grasp_direction == 'x':
+                place_direction = ['y', 'yNeg']
+            elif rotated and self.grasp_direction == 'y':
+                place_direction = ['x', 'xNeg']
+            elif not rotated:
+                place_direction = ['z', 'zNeg']
+
+            self.feasible = False
+
+            Ms = []
+            for i, direction in enumerate(place_direction):
+                for j in range(2 if yaw is not None else 1):
+                    M = manip.ManipulationModelling()
+                    M.setup_sequence(self.C, 1, accumulated_collisions=False, joint_limits=False, homing_scale=.1)
+
+                    if z == None:
+                        M.place_box(1., self.grabbed_frame, "table", "l_palm", direction)
+                        M.target_relative_xy_position(1., self.grabbed_frame, "table", [x, y])
+                    else:
+                        table_frame = self.C.getFrame("table")
+                        table_offset = table_frame.getPosition()[2] + table_frame.getSize()[2]*.5
+                        if z < table_offset:
+                            z += table_offset
+                        M.place_box(1., self.grabbed_frame, "table", "l_palm", direction, on_table=False)
+                        M.target_position(1., self.grabbed_frame, [x, y, z])
+
+                    if yaw != None:
+                        if direction == "x" or direction == "xNeg":
+                            feature = ry.FS.scalarProductXZ
+                        elif direction == "y" or direction == "yNeg":
+                            feature = ry.FS.scalarProductXX
+                        elif direction == "z" or direction == "zNeg":
+                            feature = ry.FS.scalarProductXX
+                        else:
+                            raise Exception(f"'{place_direction}' is not a valid up vector for a place motion!")
+                        
+                        M.komo.addObjective([.8, 1.], feature, ["table", self.grabbed_frame], ry.OT.eq, [1e1], [np.cos(yaw+j*np.pi)])
+
+                    M.solve(verbose=0)
+                    Ms.append((M, M.ret.sos + M.ret.eq))
+                
+            Ms.sort(key=lambda x: x[1])  # Sort by cost (index 1)
+            M = Ms[0][0]
+
+            if M.feasible:
+
+                M1 = M.sub_motion(0, accumulated_collisions=self.compute_collisions)
+                self.path = M1.solve(verbose=0)
+                if M1.feasible:
+                    for q in self.path:
+                        self.C.setJointState(q)
+                        self.C.view()
+                        time.sleep(.1)
+                    self.C.attach("table", self.grabbed_frame)
+
+                    self.grabbed_frame = ""
+                    self.grasp_direction = ""
+                    self.feasible = True
         
         else:
             raise NotImplementedError

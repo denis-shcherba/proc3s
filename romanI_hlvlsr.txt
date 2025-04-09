@@ -1,0 +1,23 @@
+```python
+def gen_plan(state: BridgeState):
+
+    # Build the bridge
+    actions = []
+    yaw = np.pi/2-0.1
+    action = Action("pick", ["block_red"])
+    actions.append(action)
+    action = Action("place_sr", [0.1, 0.4, None, False, yaw])
+    actions.append(action)
+    action = Action("pick", ["block_green"])
+    actions.append(action)
+    action = Action("place_sr", [0.1+np.cos(yaw)*0.08, 0.4-np.sin(yaw)*0.08, None, False, yaw+np.pi/2])
+    actions.append(action)
+    action = Action("pick", ["block_blue"])
+    actions.append(action)
+    action = Action("place_sr", [0.1+np.cos(yaw)*0.16, 0.4-np.sin(yaw)*0.16, None, False, yaw])
+    actions.append(action)
+
+    return actions
+```
+
+

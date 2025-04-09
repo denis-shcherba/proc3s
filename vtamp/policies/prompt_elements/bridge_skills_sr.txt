@@ -1,0 +1,5 @@
+Action("pick", [frame_name])
+Grab the frame with name frame_name.
+
+Action("place", [x, y, z, rotated, yaw])
+Place grasped object at pose x, y, z, with a specific yaw angle. If the rotated boolean is set to True, it will rotate the block 90 degrees around the X axis.
