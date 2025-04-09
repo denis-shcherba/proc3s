@@ -164,3 +164,7 @@ google-cloud-sdk
 
 machines*
 outputs*
+
+outcmaes/
+z.log.global
+plot.png

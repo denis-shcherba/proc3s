@@ -109,7 +109,7 @@ def main(cfg: OmegaConf):
             break
 
         st = time.time()
-        obs, reward, done, info = env.step(action)
+        obs, reward, done, info = env.step(action, vis=False)
         for k, v in info.items():
             statistics["step_{}_{}".format(i, k)] = v
         statistics["execution_time"] += time.time() - st

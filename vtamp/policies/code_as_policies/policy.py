@@ -78,9 +78,9 @@ class CaP(Policy):
             content = "initial={}\n".format(str(belief)) + content
             chat_history = self.prompt + [{"role": "user", "content": content}]
             llm_response, statistics["llm_query_time"] = query_llm(chat_history, seed=0)
-            write_prompt(f"llm_input_{iter}.txt", chat_history)
+            write_prompt("llm_input.txt", chat_history)
             chat_history.append({"role": "assistant", "content": llm_response})
-            save_log(f"llm_output_{iter}.txt", llm_response)
+            save_log("llm_output.txt", llm_response)
             try:
                 llm_code = parse_code(llm_response)
                 exec(llm_code, globals())

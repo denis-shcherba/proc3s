@@ -34,7 +34,8 @@ setup(
         "hydra_colorlog==1.2.0",
         "pystache==0.6.5",
         "trimesh==4.4.9",
-        "robotic==0.2.7",
+        "robotic==0.2.4",
         "rowan==1.3.2",
+        "cma==4.0.0",
     ],
 )

@@ -99,26 +99,26 @@ class Ours(Policy):
         self,
         twin=None,
         max_feedbacks=0,
-        max_csp_samples=10000,
         seed=0,
-        use_cache=False,
-        gaussian_blur=False,
+        max_csp_samples=10000,
+        use_cache=True,
         **kwargs,
     ):
         self.twin = twin
-        self.use_cache = use_cache
-        self.gaussian_blur = gaussian_blur
         self.seed = seed
-        self.max_csp_samples = max_csp_samples
         self.max_feedbacks = max_feedbacks
+        self.max_csp_samples = max_csp_samples
 
-        # Get environment specific prompt
+        self.use_cache = use_cache
+
         import_constants_from_class(twin.__class__)
+        
+        # Get environment specific prompt
         prompt_fn = "prompt_{}".format(twin.__class__.__name__)
-
         prompt_path = os.path.join(
             pathlib.Path(__file__).parent, "{}.txt".format(prompt_fn)
         )
+
         self.prompt = parse_text_prompt(prompt_path)
 
         self.plan = None
@@ -134,10 +134,12 @@ class Ours(Policy):
                 log.info("Found plan: {}".format(ground_plan))
                 self.plan = ground_plan[1:]
                 return ground_plan[0], statistics
+        
         elif len(self.plan) > 0:
             next_action = self.plan[0]
             self.plan = self.plan[1:]
             return next_action, statistics
+        
         else:
             return None, statistics
 
@@ -150,6 +152,7 @@ class Ours(Policy):
         statistics["csp_samples"] = 0
         statistics["csp_solve_time"] = 0
         statistics["llm_query_time"] = 0
+        
         for iter in range(self.max_feedbacks + 1):
             statistics["num_feedbacks"] = iter
             st = time.time()

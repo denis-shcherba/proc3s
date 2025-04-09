@@ -57,6 +57,12 @@ class BridgeState(State):
             ", ".join([str(o) for o in self.frames])
         )
 
+    def getFrame(self, name: str) -> Frame:
+        for f in self.frames:
+            if f.name == name:
+                return f
+        return None
+
 
 def create_config() -> ry.Config:
     C = ry.Config()
@@ -92,6 +98,10 @@ class BuildBridge(Task):
         return create_config()
 
     def get_reward(self, env: BridgeEnv):
+        return 0
+    
+    def get_cost(self, env: BridgeEnv):
+
         red_block = env.C.getFrame("block_red")
         green_block = env.C.getFrame("block_green")
         blue_block = env.C.getFrame("block_blue")
@@ -105,9 +115,28 @@ class BuildBridge(Task):
         blue_block_error += np.abs((blue_block.getPosition()[2] - red_block.getPosition()[2]) - .06 - .02)
 
         # Rotations
-        blue_block_error += np.abs(C.eval(ry.FS.scalarProductZZ, ["block_blue", "table"])[0][0])
+        blue_block_error += np.abs(env.C.eval(ry.FS.scalarProductZZ, ["block_blue", "table"])[0][0])
         total_cost = red_block_error + green_block_error + blue_block_error
         
+        return total_cost
+    
+
+class PlaceRed(Task):
+    def __init__(self, goal_str: str, **kwargs):
+        self.goal_str = goal_str
+
+    def get_goal(self):
+        return self.goal_str
+
+    def setup_env(self):
+        return create_config()
+
+    def get_reward(self, env: BridgeEnv):
+        return 0
+    
+    def get_cost(self, env: BridgeEnv):
+        red_block = env.C.getFrame("block_red")
+        total_cost = np.linalg.norm(red_block.getPosition()[:2] - np.array([.3, .3]))**2
         return total_cost
 
 
@@ -117,10 +146,14 @@ class BridgeEnv(Environment):
         super().__init__(task)
 
         self.compute_collisions = True
-        self.feasible = True
+        
+        self.base_config: ry.Config = self.task.setup_env()
+        self.base_config.view(False, "Base Config")
+        self.C: ry.Config = self.task.setup_env()
+        self.C.view(False, "Working Config")
         self.initial_state = self.reset()
 
-    def step(self, action: Action):
+    def step(self, action: Action, vis: bool=True):
         info = {"constraint_violations": []}
 
         if not self.feasible:
@@ -135,8 +168,12 @@ class BridgeEnv(Environment):
             assert self.grabbed_frame == ""
 
             frame = action.params[0]
+            pick_axis = action.params[1]
             
-            graspDirections = ['x', 'y']
+            if pick_axis == None:
+                graspDirections = ['x', 'y']
+            else:
+                graspDirections = [pick_axis]
             for gd in graspDirections:
 
                 M = manip.ManipulationModelling()
@@ -152,10 +189,13 @@ class BridgeEnv(Environment):
                     self.path = M1.solve(verbose=0)
                 
                     if M1.feasible:
-                        for q in self.path:
-                            self.C.setJointState(q)
-                            self.C.view()
-                            time.sleep(.1)
+                        if vis:
+                            for q in self.path:
+                                self.C.setJointState(q)
+                                self.C.view()
+                                time.sleep(.1)
+                        else:
+                            self.C.setJointState(self.path[-1])
                         self.C.attach("l_gripper", frame)
 
                         self.grabbed_frame = frame
@@ -214,10 +254,13 @@ class BridgeEnv(Environment):
                 M1 = M.sub_motion(0, accumulated_collisions=self.compute_collisions)
                 self.path = M1.solve(verbose=0)
                 if M1.feasible:
-                    for q in self.path:
-                        self.C.setJointState(q)
-                        self.C.view()
-                        time.sleep(.1)
+                    if vis:
+                        for q in self.path:
+                            self.C.setJointState(q)
+                            self.C.view()
+                            time.sleep(.1)
+                    else:
+                        self.C.setJointState(self.path[-1])
                     self.C.attach("table", self.grabbed_frame)
 
                     self.grabbed_frame = ""
@@ -245,10 +288,17 @@ class BridgeEnv(Environment):
         return twin
 
     def reset(self):
-        self.C: ry.Config = self.task.setup_env()
+        relevant_frames = ["block_red", "block_green", "block_blue"]
+        for f in relevant_frames:
+            self.C.attach("table", f)
+        q = self.base_config.getJointState()
+        C_state = self.base_config.getFrameState()
+        self.C.setJointState(q)
+        self.C.setFrameState(C_state)
         self.C.view()
-        self.state = []
+        self.state = self.getState()
         self.t = 0
+        self.feasible = True
 
         self.grabbed_frame = ""
         self.grasp_direction = ""
@@ -276,4 +326,9 @@ class BridgeEnv(Environment):
         return state
 
     def render(self):
-        pass
+        self.C.view(True)
+
+    def compute_cost(self):
+        self.C.view()
+        cost = self.task.get_cost(self)
+        return cost

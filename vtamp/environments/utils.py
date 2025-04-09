@@ -32,6 +32,10 @@ class Task(ABC):
         pass
 
     @abstractmethod
+    def get_cost(self, env):
+        pass
+
+    @abstractmethod
     def setup_env(self, **kwargs):
         pass
 
@@ -67,6 +71,9 @@ class Environment(ABC):
         raise NotImplementedError
 
     def render(self):
+        pass
+
+    def reset(self):
         pass
 
     def close(self):

@@ -1,0 +1,18 @@
+```python
+def gen_plan(state: BridgeState, center_x: float, center_y: float):
+
+    # Build the bridge
+    actions = []
+    action = Action("pick", ["block_red"])
+    actions.append(action)
+    action = Action("place", [center_x, center_y, None, None, None, None])
+    actions.append(action)
+    
+    return actions
+
+def gen_domain(initial: BridgeState):
+    return {
+        "center_x": .1, # BBO initial value
+        "center_y": .1, # BBO initial value
+    }
+```
