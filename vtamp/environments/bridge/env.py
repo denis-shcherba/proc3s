@@ -98,7 +98,7 @@ class BuildPlanarTriangle(Task):
     def setup_env(self):
         return create_config()
 
-    def get_reward(self, env: BridgeEnv):
+    def get_reward_(self, env: BridgeEnv):
         red_block = env.C.getFrame("block_red")
         green_block = env.C.getFrame("block_green")
         blue_block = env.C.getFrame("block_blue")
@@ -116,6 +116,33 @@ class BuildPlanarTriangle(Task):
         total_cost = red_block_error + green_block_error + blue_block_error
         
         return total_cost
+
+    def get_reward_(self, env: BridgeEnv):
+
+            red_block = env.C.getFrame("block_red")
+            green_block = env.C.getFrame("block_green")
+            blue_block = env.C.getFrame("block_blue")
+
+
+            red_block_error = np.abs(env.C.eval(ry.FS.positionRel, [red_block, green_block])[0][0]-env.C.eval(ry.FS.positionRel, [red_block, blue_block])[0][0])
+            green_block_error = np.abs(env.C.eval(ry.FS.positionRel, [green_block, red_block])[0][0]-env.C.eval(ry.FS.positionRel, [green_block, blue_block])[0][0])
+            blue_block_error = np.abs(env.C.eval(ry.FS.positionRel, [blue_block, red_block])[0][0]-env.C.eval(ry.FS.positionRel, [blue_block, green_block])[0][0])
+
+            red_block_error += np.abs(env.C.eval(ry.FS.positionRel, [red_block, green_block])[0][1]+env.C.eval(ry.FS.positionRel, [red_block, blue_block])[0][1])
+            green_block_error += np.abs(env.C.eval(ry.FS.positionRel, [green_block, red_block])[0][1]+env.C.eval(ry.FS.positionRel, [green_block, blue_block])[0][1])
+            blue_block_error += np.abs(env.C.eval(ry.FS.positionRel, [blue_block, red_block])[0][1]+env.C.eval(ry.FS.positionRel, [blue_block, green_block])[0][1])
+
+            # Distance of one cm between triangle sides
+            red_block_error += 30*(env.C.eval(ry.FS.negDistance, [red_block, green_block])[0]+.01)**2
+            green_block_error += 30*(env.C.eval(ry.FS.negDistance, [green_block, blue_block])[0]+.01)**2
+            blue_block_error += 30*(env.C.eval(ry.FS.negDistance, [blue_block, green_block])[0]+.01)**2
+
+            total_cost = red_block_error + green_block_error + blue_block
+        
+            print("+-------------------------------+")
+            print("Total cost: ", total_cost)
+            print("+-------------------------------+")
+            return total_cost
 
 class BuildPlanarI(Task):
     # TODO
@@ -386,8 +413,8 @@ class BridgeEnv(Environment):
                 if M1.feasible:
                     for q in self.path:
                         self.C.setJointState(q)
-                        self.C.view()
-                        time.sleep(.1)
+                        # self.C.view()
+                        # time.sleep(.1)
                     self.C.attach("table", self.grabbed_frame)
 
                     self.grabbed_frame = ""
