@@ -1,5 +1,5 @@
 ```python
-def gen_plan(state: BridgeState, center_x: float, center_y: float, yaw: float, slack: float):
+def gen_plan(state: BridgeState, center_x: float, center_y: float, yaw: float):
     
     import numpy as np
     
@@ -21,17 +21,18 @@ def gen_plan(state: BridgeState, center_x: float, center_y: float, yaw: float, s
     actions.append(Action("place_sr", [pos_x, pos_y, None, None, None]))
 
     # Blue #
+    # Here the pick axis is relevant as it influences the place
+    slack = .03
     pos_z = block_size_z + slack
-    actions.append(Action("pick", ["block_blue", None]))
+    actions.append(Action("pick", ["block_blue", "x"]))
     actions.append(Action("place_sr", [center_x, center_y, pos_z, True, yaw]))
     
     return actions
 
-def gen_initial_guess(initial: BridgeState):
+def gen_domain(initial: BridgeState):
     return {
-        "center_x": .2, # BBO initial value
-        "center_y": .2,
-        "yaw": .0,
-        "slack": .03,
+        "center_x": ContinuousSampler(-0.5, 0.5),
+        "center_y": ContinuousSampler(-0.5, 0.5),
+        "yaw": ContinuousSampler(0, 6.282),
     }
 ```

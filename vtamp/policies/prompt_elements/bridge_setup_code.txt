@@ -1,46 +1,29 @@
 CATEGORIES = ["bowl", "block"]
-TABLE_BOUNDS = [[-0.3, 0.3], [-0.8, -0.2], [0, 0]]  # X Y Z
-TABLE_CENTER = [0, -0.5, 0]
-BLOCK_SIZE = 0.04
+TABLE_BOUNDS = [[-0.5, 0.5], [-0.5, 0.5], [0, 0]]  # X Y Z
+TABLE_CENTER = [0, 0, 0]
 
 @dataclass
-class RavenPose:
-    x: float = 0
-    y: float = 0
-    z: float = 0
-    roll: float = 0
-    pitch: float = 0
-    yaw: float = 0
-
-    @property
-    def point(self):
-        ...
-    
-    @property
-    def euler(self):
-        ...
-    
-@dataclass
-class RavenObject:
-    category: str
-    color: str
-    pose: RavenPose = field(default_factory=lambda: RavenPose())
-    body: Optional[int] = None
-
-@dataclass
-class RavenBelief:
-    objects: Dict[str, RavenObject] = field(default_factory=dict)
-    observations: List[Any] = field(default_factory=list)
-
-@dataclass
-class ContinuousSampler:
-    min: float = 0
-    max: float = 1
-
-    def sample(self):
-        return random.uniform(self.min, self.max)
-
-@dataclass
-class Action:
+class Frame:
     name: str
-    params: List[float]
+    x_pos: float
+    y_pos: float
+    z_pos: float
+    x_size: float
+    y_size: float
+    z_size: float
+    x_rot: float
+    y_rot: float
+    z_rot: float
+    color: List[float]
+
+
+@dataclass
+class BridgeState(State):
+    frames: List[Frame] = field(default_factory=list)
+
+    def getFrame(self, name: str) -> Frame:
+        for f in self.frames:
+            if f.name == name:
+                return f
+        return None
+        

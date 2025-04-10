@@ -46,7 +46,7 @@ class ManipulationModelling():
         if quaternion_norms:
             self.komo.addQuaternionNorms()
 
-    def setup_sequence(self, C: ry.Config, K: int, homing_scale: float = 1e-2, velocity_scale: float = 1e-1, accumulated_collisions: bool = True, joint_limits: bool = True, quaternion_norms: bool = False):
+    def setup_sequence(self, C: ry.Config, K: int, homing_scale: float = 1e1, velocity_scale: float = 1e-1, accumulated_collisions: bool = True, joint_limits: bool = True, quaternion_norms: bool = False):
         """
         Sets up the KOMO problem to control a sequence of joint configurations, adding objectives for homing, velocity, and constraints 
         like collision avoidance, joint limits, and quaternion normalization.

@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 
 FUNC_NAME = "gen_plan"
-FUNC_DOMAIN = "gen_domain"
+FUNC_DOMAIN = "gen_initial_guess"
 
 
 def bbo_on_motion_plan(
@@ -78,7 +78,7 @@ def bbo_on_motion_plan(
         'CMA_elitist': True,      # Keep the best from last generation
     }
     # sigma0: initial standard deviation
-    result = cma.fmin(compute_cost, cma_initial_state, sigma0=.4, options=bbo_options)
+    result = cma.fmin(compute_cost, cma_initial_state, sigma0=.5, options=bbo_options)
     ground_plan = plan_gen(initial_state, *result[0])
     
     #################################
@@ -181,9 +181,9 @@ class DENECK(Policy):
         write_prompt(input_fn, chat_history)
         
         # TODO: use_cache
-        # llm_response, statistics["llm_query_time"] = query_llm(chat_history, seed=0)
+        # llm_response, llm_query_time = query_llm(chat_history, seed=0)
         #####################################################
-        llm_response = open("./romanI_hlvlsr_bbo.txt", 'r').read()
+        llm_response = open("./triangle_hlvlsr_bbo.txt", 'r').read()
         llm_query_time = 0
         #####################################################
         

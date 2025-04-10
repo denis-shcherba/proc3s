@@ -12,7 +12,7 @@ env:
   stability_check: False
   gui: true
 task:
-  _target_: vtamp.environments.bridge.env.TestTask
+  _target_: vtamp.environments.bridge.tasks.TestTask
   goal_str: "Test task, place three blocks next to each other"
   task_name: TestTask
 policy:

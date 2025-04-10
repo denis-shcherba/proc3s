@@ -6,7 +6,7 @@ import rowan
 import logging
 import numpy as np
 import robotic as ry
-from typing import List
+from typing import List, Tuple
 
 from shapely.geometry import Point
 from vtamp.environments.utils import Action, Environment, State, Task
@@ -62,194 +62,53 @@ class BridgeState(State):
             if f.name == name:
                 return f
         return None
-
-
-def create_config() -> ry.Config:
-    C = ry.Config()
-    C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
-
-    C.delFrame("panda_collCameraWrist")
-    C.getFrame("table").setShape(ry.ST.ssBox, size=[1., 1., .1, .02])
-
-    names = ["red", "green", "blue"]
-
-    # Objects
-    for i in range(3):
-        color = [0., 0., 0.]
-        color[i%3] = 1.
-        C.addFrame(f"block_{names[i]}") \
-            .setPosition([(i%3)*.15, (i//3)*.1+.1, .71]) \
-            .setShape(ry.ST.ssBox, size=[.04, .04, .12, 0.005]) \
-            .setColor(color) \
-            .setContact(1) \
-            .setMass(.1)
     
-    return C
 
-def create_horizontal_config() -> ry.Config:
-    #TODO more center, more space between blocks, make blocks on table 
-    C = ry.Config()
-    C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
-
-    C.delFrame("panda_collCameraWrist")
-    C.getFrame("table").setShape(ry.ST.ssBox, size=[1., 1., .1, .02])
-
-    names = ["red", "green", "blue"]
-
-    # Objects
-    for i in range(3):
-        color = [0., 0., 0.]
-        color[i%3] = 1.
-        C.addFrame(f"block_{names[i]}") \
-            .setPosition([(i%3)*.15, (i//3)*.1+.1, .71]) \
-            .setShape(ry.ST.ssBox, size=[.04, .12, .04, 0.005]) \
-            .setColor(color) \
-            .setContact(1) \
-            .setMass(.1)
+def pick_place_manipulation(C: ry.Config,
+                            frame_name: str,
+                            pick_dir: str,
+                            place_dir: str,
+                            pos: Tuple[float],
+                            yaw: float,
+                            compute_collisions: bool=True) -> manip.ManipulationModelling:
+    x, y, z = pos
+    M = manip.ManipulationModelling()
+    M.setup_pick_and_place_waypoints(C, "l_gripper", frame_name, accumulated_collisions=compute_collisions)
     
-    return C
+    M.grasp_box(1., "l_gripper", frame_name, "l_palm", pick_dir)
 
-class BuildPlanarTriangle(Task):
-    #TODO prolly
-    def __init__(self, goal_str: str, **kwargs):
-        self.goal_str = goal_str
+    if z == None:
+        M.place_box(2., frame_name, "table", "l_palm", place_dir)
+        M.target_relative_xy_position(2., frame_name, "table", [x, y])
+    else:
+        table_frame = C.getFrame("table")
+        table_offset = table_frame.getPosition()[2] + table_frame.getSize()[2]*.5
+        if z < table_offset:
+            z += table_offset
+        M.place_box(2., frame_name, "table", "l_palm", place_dir, on_table=False)
+        M.target_position(2., frame_name, [x, y, z])
 
-    def get_goal(self):
-        return self.goal_str
-
-    def setup_env(self):
-        return create_horizontal_config()
-
-    def get_reward(self, env: BridgeEnv):
-        return 0
-    
-    def get_cost(self, env: BridgeEnv):
-
-            red_block_error = np.abs(env.C.eval(ry.FS.positionRel, ["block_red", "block_green"])[0][0]-env.C.eval(ry.FS.positionRel, ["block_red", "block_blue"])[0][0])
-            green_block_error = np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][0]-env.C.eval(ry.FS.positionRel, ["block_green", "block_blue"])[0][0])
-            blue_block_error = np.abs(env.C.eval(ry.FS.positionRel, ["block_blue", "block_red"])[0][0]-env.C.eval(ry.FS.positionRel, ["block_blue", "block_green"])[0][0])
-
-            red_block_error += np.abs(env.C.eval(ry.FS.positionRel, ["block_red", "block_green"])[0][1]+env.C.eval(ry.FS.positionRel, ["block_red", "block_blue"])[0][1])
-            green_block_error += np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][1]+env.C.eval(ry.FS.positionRel, ["block_green", "block_blue"])[0][1])
-            blue_block_error += np.abs(env.C.eval(ry.FS.positionRel, ["block_blue", "block_red"])[0][1]+env.C.eval(ry.FS.positionRel, ["block_blue", "block_green"])[0][1])
-
-            # Distance of one cm between triangle sides
-            red_block_error += 30*(env.C.eval(ry.FS.negDistance, ["block_red", "block_green"])[0]+.01)**2
-            green_block_error += 30*(env.C.eval(ry.FS.negDistance, ["block_green", "block_blue"])[0]+.01)**2
-            blue_block_error += 30*(env.C.eval(ry.FS.negDistance, ["block_blue", "block_green"])[0]+.01)**2
-
-            total_cost = red_block_error + green_block_error + blue_block_error
+    if yaw != None:
         
-            return total_cost
-    
-
-class TestTask(Task):
-    def __init__(self, goal_str: str, **kwargs):
-        self.goal_str = goal_str
-
-    def get_goal(self):
-        return self.goal_str
-
-    def setup_env(self):
-        return create_horizontal_config()
-
-    def get_reward(self, env: BridgeEnv):
-        return 0
-    
-    def get_cost(self, env: BridgeEnv):
-
-        red_block_error = 30*(env.C.eval(ry.FS.negDistance, ["block_red", "block_green"])[0]+.04)**2
-        green_block_error = 30*(env.C.eval(ry.FS.negDistance, ["block_green", "block_blue"])[0]+.04)**2
-
-        blue_block_error = 10*(env.C.eval(ry.FS.positionDiff, ["block_blue", "block_green"])[0][1])**2
-        green_block_error += 10*(env.C.eval(ry.FS.positionDiff, ["block_green", "block_red"])[0][1])**2
-
-        total_cost = red_block_error + green_block_error + blue_block_error
-        return total_cost[0]
-
-class BuildPlanarI(Task):
-    # TODO look into CMA-Es issue, doesnt output the best solution but the last
-    def __init__(self, goal_str: str, **kwargs):
-        self.goal_str = goal_str
-
-    def get_goal(self):
-        return self.goal_str
-
-    def setup_env(self):
-        return create_horizontal_config()
-    
-    def get_reward(self, env: BridgeEnv):
-        return 0
-    
-    def get_cost(self, env: BridgeEnv):
-        red_block_error = np.abs(env.C.eval(ry.FS.scalarProductXX, ["block_red", "block_green"])[0][0])
-        green_block_error = np.abs(env.C.eval(ry.FS.scalarProductXX, ["block_green", "block_blue"])[0][0])
-        blue_block_error = np.abs(env.C.eval(ry.FS.scalarProductXY, ["block_blue", "block_red"])[0][0])
+        if place_dir == "x" or place_dir == "xNeg":
+            feature = ry.FS.vectorY
         
-        # alignment things
-        green_block_error += 10 * (np.abs(np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][0])-.08)+np.abs(env.C.eval(ry.FS.positionRel, ["block_green", "block_red"])[0][1]))
-
-        total_cost = red_block_error + green_block_error + blue_block_error
-
-        if total_cost<.01:
-            env.C.view(True)
-
-
-        return total_cost
-    
-
-
-class BuildBridge(Task):
-    def __init__(self, goal_str: str, **kwargs):
-        self.goal_str = goal_str
-
-    def get_goal(self):
-        return self.goal_str
-
-    def setup_env(self):
-        return create_config()
-
-    def get_reward(self, env: BridgeEnv):
-        return 0
-    
-    def get_cost(self, env: BridgeEnv):
-
-        red_block = env.C.getFrame("block_red")
-        green_block = env.C.getFrame("block_green")
-        blue_block = env.C.getFrame("block_blue")
-
-        red_block_error = 0
-        green_block_error = 0
-        blue_block_error = 0
-
-        # Positions
-        green_block_error += np.abs(np.linalg.norm(green_block.getPosition() - red_block.getPosition()) - 0.12)
-        blue_block_error += np.abs((blue_block.getPosition()[2] - red_block.getPosition()[2]) - .06 - .02)
-
-        # Rotations
-        blue_block_error += np.abs(env.C.eval(ry.FS.scalarProductZZ, ["block_blue", "table"])[0][0])
-        total_cost = red_block_error + green_block_error + blue_block_error
+        elif place_dir == "y" or place_dir == "yNeg":
+            feature = ry.FS.vectorX
         
-        return total_cost
+        elif place_dir == "z" or place_dir == "zNeg":
+            feature = ry.FS.vectorY
+        
+        else:
+            raise Exception(f"'{place_dir}' is not a valid up vector for a place motion!")
+
+        yaw += np.pi*.5
+        target = np.array([np.cos(yaw), -np.sin(yaw), .0])
+        if "Neg" in place_dir: target *= -1
+        M.komo.addObjective([2.], feature, [frame_name], ry.OT.eq, [1e1], target)
     
+    return M
 
-class PlaceRed(Task):
-    def __init__(self, goal_str: str, **kwargs):
-        self.goal_str = goal_str
-
-    def get_goal(self):
-        return self.goal_str
-
-    def setup_env(self):
-        return create_config()
-
-    def get_reward(self, env: BridgeEnv):
-        return 0
-    
-    def get_cost(self, env: BridgeEnv):
-        red_block = env.C.getFrame("block_red")
-        total_cost = np.linalg.norm(red_block.getPosition()[:2] - np.array([.3, .3]))**2
-        return total_cost
 
 
 class BridgeEnv(Environment):
@@ -257,13 +116,14 @@ class BridgeEnv(Environment):
 
         super().__init__(task)
 
-        self.compute_collisions = False
+        self.compute_collisions = True
         
         self.base_config: ry.Config = self.task.setup_env()
         self.base_config.view(False, "Base Config")
         self.C: ry.Config = self.task.setup_env()
         self.C.view(False, "Working Config")
         self.initial_state = self.reset()
+        self.qHome = self.C.getJointState()
 
     def step(self, action: Action, vis: bool=True):
         info = {"constraint_violations": []}
@@ -276,185 +136,92 @@ class BridgeEnv(Environment):
         self.feasible = False
 
         if action.name == "pick":
-
-            assert self.grabbed_frame == ""
-
-            frame = action.params[0]
-            pick_axis = action.params[1]
-            
-            if pick_axis == None:
-                graspDirections = ['x', 'y']
-            else:
-                graspDirections = [pick_axis]
-            for gd in graspDirections:
-
-                M = manip.ManipulationModelling()
-                M.setup_sequence(self.C, 1, accumulated_collisions=self.compute_collisions)
-                M.grasp_box(1., "l_gripper", frame, "l_palm", gd)
-                M.solve(verbose=0)
-                
-                if M.feasible:
-                    M1 = M.sub_motion(0, accumulated_collisions=self.compute_collisions)
-                    M1.no_collisions([.3,.7], ["l_palm", frame], margin=.05)
-                    M1.retract([.0, .2], "l_gripper")
-                    M1.approach([.8, 1.], "l_gripper")
-                    self.path = M1.solve(verbose=0)
-                
-                    if M1.feasible:
-                        if vis:
-                            for q in self.path:
-                                self.C.setJointState(q)
-                                self.C.view()
-                                time.sleep(.1)
-                        else:
-                            self.C.setJointState(self.path[-1])
-                        self.C.attach("l_gripper", frame)
-
-                        self.grabbed_frame = frame
-                        self.grasp_direction = gd
-                        self.feasible = True
-                        break
-        
-        elif action.name == "place":
-            
-            assert self.grabbed_frame != ""
-
-            x = action.params[0]
-            y = action.params[1]
-            z = action.params[2]
-            roll = action.params[3]
-            pitch = action.params[4]
-            yaw = action.params[5]
-
-            if roll == None and pitch == None and yaw == None:
-                place_direction = 'z'
-            else:
-                place_direction = None
-
-            self.feasible = False
-
-            M = manip.ManipulationModelling()
-            M.setup_sequence(self.C, 1, accumulated_collisions=self.compute_collisions, joint_limits=False, homing_scale=.1)
-            
-            if z == None:
-                M.place_box(1., self.grabbed_frame, "table", "l_palm", place_direction)
-                M.target_relative_xy_position(1., self.grabbed_frame, "table", [x, y])
-            else:
-                table_frame = self.C.getFrame("table")
-                table_offset = table_frame.getPosition()[2] + table_frame.getSize()[2]*.5
-                if z < table_offset:
-                    z += table_offset
-                M.place_box(1., self.grabbed_frame, "table", "l_palm", place_direction, on_table=False)
-                M.target_position(1., self.grabbed_frame, [x, y, z])
-
-            if roll != None:
-                M.komo.addObjective([.8, 1.], ry.FS.scalarProductYY, ["table", self.grabbed_frame], ry.OT.eq, [1e1], [np.cos(roll)])
-                if pitch == None and yaw == None:
-                    M.komo.addObjective([.8, 1.], ry.FS.vectorX, [self.grabbed_frame], ry.OT.eq, [1e1], [1., 0., 0.])
-            if pitch != None:
-                M.komo.addObjective([.8, 1.], ry.FS.scalarProductZZ, ["table", self.grabbed_frame], ry.OT.eq, [1e1], [np.cos(pitch)])
-                if roll == None and yaw == None:
-                    M.komo.addObjective([.8, 1.], ry.FS.vectorY, [self.grabbed_frame], ry.OT.eq, [1e1], [0., 1., 0.])
-            if yaw != None:
-                M.komo.addObjective([.8, 1.], ry.FS.scalarProductXX, ["table", self.grabbed_frame], ry.OT.eq, [1e1], [np.cos(yaw)])
-                if roll == None and pitch == None:
-                    M.komo.addObjective([.8, 1.], ry.FS.vectorZ, [self.grabbed_frame], ry.OT.eq, [1e1], [0., 0., 1.])
-
-            M.solve(verbose=0)
-            if M.feasible:
-
-                M1 = M.sub_motion(0, accumulated_collisions=self.compute_collisions)
-                self.path = M1.solve(verbose=0)
-                if M1.feasible:
-                    if vis:
-                        for q in self.path:
-                            self.C.setJointState(q)
-                            self.C.view()
-                            time.sleep(.1)
-                    else:
-                        self.C.setJointState(self.path[-1])
-                    self.C.attach("table", self.grabbed_frame)
-
-                    self.grabbed_frame = ""
-                    self.grasp_direction = ""
-                    self.feasible = True
+            assert self.to_be_picked == None
+            self.to_be_picked = action.params
+            self.feasible = True
         
         elif action.name == "place_sr":
-            assert self.grabbed_frame != ""
+            assert self.to_be_picked != None
 
-            x = action.params[0]
-            y = action.params[1]
-            z = action.params[2]
-            rotated = action.params[3]
-            yaw = action.params[4]
+            frame_name = self.to_be_picked[0]
+            pick_dir = self.to_be_picked[1]
+            x, y, z = action.params[:3]
+            rotated, yaw = action.params[3:5]
+            
+            grasp_dirs = ["x", "y"] if pick_dir == None else [pick_dir]
+            for grasp_dir in grasp_dirs:
+                if rotated and grasp_dir == 'x':
+                    place_dirs = ['y', 'yNeg']
+                elif rotated and grasp_dir == 'y':
+                    place_dirs = ['x', 'xNeg']
+                elif not rotated:
+                    place_dirs = ['z', 'zNeg']
 
 
-            if rotated and self.grasp_direction == 'x':
-                place_direction = ['y', 'yNeg']
-            elif rotated and self.grasp_direction == 'y':
-                place_direction = ['x', 'xNeg']
-            elif not rotated:
-                place_direction = ['z', 'zNeg']
-
-            self.feasible = False
-
-            Ms = []
-            for i, direction in enumerate(place_direction):
-                for j in range(2 if yaw is not None else 1):
-                    M = manip.ManipulationModelling()
-                    M.setup_sequence(self.C, 1, accumulated_collisions=self.compute_collisions, joint_limits=False, homing_scale=.1)
-
-                    if z == None:
-                        M.place_box(1., self.grabbed_frame, "table", "l_palm", direction)
-                        M.target_relative_xy_position(1., self.grabbed_frame, "table", [x, y])
-                    else:
-                        table_frame = self.C.getFrame("table")
-                        table_offset = table_frame.getPosition()[2] + table_frame.getSize()[2]*.5
-                        if z < table_offset:
-                            z += table_offset
-                        M.place_box(1., self.grabbed_frame, "table", "l_palm", direction, on_table=False)
-                        M.target_position(1., self.grabbed_frame, [x, y, z])
-
-                    if yaw != None:
-                        if direction == "x" or direction == "xNeg":
-                            feature = ry.FS.scalarProductXZ
-                        elif direction == "y" or direction == "yNeg":
-                            feature = ry.FS.scalarProductXX
-                        elif direction == "z" or direction == "zNeg":
-                            feature = ry.FS.scalarProductXX
-                        else:
-                            raise Exception(f"'{place_direction}' is not a valid up vector for a place motion!")
-                        
-                        M.komo.addObjective([.8, 1.], feature, ["table", self.grabbed_frame], ry.OT.eq, [1e1], [np.cos(yaw+j*np.pi)])
+                for place_dir in place_dirs:
+                    M = pick_place_manipulation(self.C,
+                                                frame_name,
+                                                grasp_dir,
+                                                place_dir,
+                                                (x, y, z),
+                                                yaw,
+                                                self.compute_collisions)
 
                     M.solve(verbose=0)
-                    Ms.append((M, M.ret.sos + M.ret.eq))
-                
-            Ms.sort(key=lambda x: x[1])  # Sort by cost (index 1)
-            M = Ms[0][0]
+                    if M.feasible:
 
-            if M.feasible:
+                        M1 = M.sub_motion(0, accumulated_collisions=self.compute_collisions)
+                        # M1.keep_distance([.3,.7], "l_palm", frame_name, margin=.05)
+                        # M1.retract([.0, .2], "l_gripper")
+                        # M1.approach([.8, 1.], "l_gripper")
+                        path1 = M1.solve(verbose=0)
 
-                M1 = M.sub_motion(0, accumulated_collisions=self.compute_collisions)
-                self.path = M1.solve(verbose=0)
-                if M1.feasible:
-                    for q in self.path:
-                        self.C.setJointState(q)
-                        # self.C.view()
-                        # time.sleep(.1)
-                    self.C.attach("table", self.grabbed_frame)
+                        M2 = M.sub_motion(1, accumulated_collisions=self.compute_collisions)
+                        # M2.keep_distance([.2, .8], "table", frame_name, .04)
+                        # M2.keep_distance([], "l_palm", frame_name)
+                        path2 = M2.solve(verbose=0)
+                        
+                        if M1.feasible and M2.feasible:
+                            
+                            if vis:
+                                for q in path1:
+                                    self.C.setJointState(q)
+                                    self.C.view()
+                                    time.sleep(.1)
+                                self.C.attach("l_gripper", frame_name)
+                                
+                                for q in path2:
+                                    self.C.setJointState(q)
+                                    self.C.view()
+                                    time.sleep(.1)
+                                self.C.attach("table", frame_name)
+                            
+                            else:
+                                self.C.setJointState(path1[-1])
+                                self.C.attach("l_gripper", frame_name)
+                                self.C.view()
+                                self.C.setJointState(path2[-1])
+                                self.C.attach("table", frame_name)
+                                self.C.view()
+                                time.sleep(.05) # This is to kind of see that the last block in Bridge building also gets placed.
 
-                    self.grabbed_frame = ""
-                    self.grasp_direction = ""
-                    self.feasible = True
+                            self.feasible = True
+                            self.to_be_picked = None
+                            break
+
+                if self.feasible:
+                    break
         
         else:
             raise NotImplementedError
+        
+        if not self.feasible:
+            info["constraint_violations"].append("idk")
 
         self.C.view()
         self.t = self.t + 1
-
-        return self.getState(), False, 0, info
+        self.state = self.getState()
+        return self.state, False, 0, info
     
     @staticmethod
     def sample_twin(real_env: BridgeEnv, obs, task: Task, **kwargs) -> BridgeEnv:
@@ -477,11 +244,9 @@ class BridgeEnv(Environment):
         self.state = self.getState()
         self.t = 0
         self.feasible = True
+        self.to_be_picked: List[str] = None
 
-        self.grabbed_frame = ""
-        self.grasp_direction = ""
-        
-        return self.getState()
+        return self.state
     
     def getState(self):
 
@@ -495,7 +260,7 @@ class BridgeEnv(Environment):
         
             pos = C_frame.getPosition()
             size = C_frame.getSize()
-            rot = rowan.to_euler(C_frame.getQuaternion())
+            rot = rowan.to_euler(C_frame.getQuaternion(), convention="xyz") # Rotations need further testing
             color = C_frame.getMeshColors()[0][:3]
         
             frame = Frame(f, *pos, *size[:3], *rot, color)

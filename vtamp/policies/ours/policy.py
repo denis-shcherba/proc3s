@@ -62,7 +62,7 @@ def rejection_sample_csp(
         ground_plan = plan_gen(initial_state, **input_vec)
         constraint_violated = False
         for ai, action in enumerate(ground_plan):
-            _, _, _, info = env.step(action)
+            _, _, _, info = env.step(action, vis=False)
             if len(info["constraint_violations"]) > 0:
                 violation_str = [
                     "Step {}, Action {}, Violation: {}".format(
@@ -101,7 +101,7 @@ class Ours(Policy):
         max_feedbacks=0,
         seed=0,
         max_csp_samples=10000,
-        use_cache=True,
+        use_cache=False,
         **kwargs,
     ):
         self.twin = twin
@@ -176,7 +176,12 @@ class Ours(Policy):
                 llm_response = read_file(os.path.join(previous_folder, output_fn))
             else:
                 log.info("Querying LLM")
-                llm_response, llm_query_time = query_llm(chat_history, seed=self.seed)
+                # llm_response, llm_query_time = query_llm(chat_history, seed=self.seed)
+                #####################################################
+                llm_response = open("./triangle_hlvlsr_proc3s.txt", 'r').read()
+                llm_query_time = 0
+                #####################################################
+            print(llm_response)
 
             statistics["llm_query_time"] += llm_query_time
 

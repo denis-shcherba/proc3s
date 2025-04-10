@@ -167,4 +167,7 @@ outputs*
 
 outcmaes/
 z.log.global
+z.komoData
+z.komoReport.plt
+z.plotcmd
 plot.png

@@ -12,7 +12,7 @@ env:
   stability_check: False
   gui: true
 task:
-  _target_: vtamp.environments.bridge.env.BuildPlanarTriangle
+  _target_: vtamp.environments.bridge.tasks.BuildPlanarTriangle
   goal_str: "Build a  planar triangle. A planar triangle is defined as .."
   task_name: BuildPlanarTriangle
 policy:
