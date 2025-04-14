@@ -1,0 +1,52 @@
+```python
+def gen_plan(state: BridgeState,
+             center_x_0: float, center_y_0: float, yaw_0: float,
+             center_x_1: float, center_y_1: float, yaw_1: float,
+             center_x_2: float, center_y_2: float, yaw_2: float,
+             slack: float):
+    
+    import numpy as np
+
+    poses = [[center_x_0, center_y_0, yaw_0],
+             [center_x_1, center_y_1, yaw_1],
+             [center_x_2, center_y_2, yaw_2]]
+    
+    # Build the bridge
+    actions = []
+
+    for i, pose in enumerate(poses):
+        block_size_z = state.getFrame(f"block_red_{i}").z_size
+        
+        # Red #
+        pos_x = np.cos(pose[2]) * block_size_z * .5 + pose[0]
+        pos_y = -np.sin(pose[2]) * block_size_z * .5 + pose[1]
+        actions.append(Action("pick", [f"block_red_{i}", None]))
+        actions.append(Action("place_sr", [pos_x, pos_y, None, None, None]))
+
+        # Green #
+        pos_x = -np.cos(pose[2]) * block_size_z * .5 + pose[0]
+        pos_y = np.sin(pose[2]) * block_size_z * .5 + pose[1]
+        actions.append(Action("pick", [f"block_green_{i}", None]))
+        actions.append(Action("place_sr", [pos_x, pos_y, None, None, None]))
+
+        # Blue #
+        pos_z = block_size_z + slack
+        actions.append(Action("pick", [f"block_blue_{i}", None]))
+        actions.append(Action("place_sr", [pose[0], pose[1], pos_z, True, pose[2]]))
+    
+    return actions
+
+def gen_initial_guess(initial: BridgeState):
+    return {
+        "center_x_0": .2, # BBO initial value
+        "center_y_0": .2,
+        "yaw_0": .0,
+        "center_x_1": .4,
+        "center_y_1": .2,
+        "yaw_1": .0,
+        "center_x_2": .2,
+        "center_y_2": .4,
+        "yaw_2": .0,
+        "slack": .03,
+    }
+```

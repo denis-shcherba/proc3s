@@ -1,0 +1,65 @@
+```python
+def gen_plan(state: BridgeState, center_x: float, center_y: float, center_phi: float, slack: float):
+
+    import numpy as np
+    import robotic as ry
+
+    # Build a bridge
+
+    block_size_z = state.getFrame("block_red").z_size
+
+    komo = ry.KOMO()
+    komo.setConfig(state.config, True)
+    komo.setTiming(6, 1, 10, 2)
+
+    komo.addControlObjective([], 0, 1e-2)
+    komo.addControlObjective([], 1, 1e-1)
+    komo.addControlObjective([], 2, 1e-1)
+    
+    komo.addObjective([], ry.FS.accumulatedCollisions, [], ry.OT.eq, [1e0])
+    komo.addObjective([], ry.FS.jointLimits, [], ry.OT.ineq, [1e0])
+    
+    komo.addModeSwitch([1., 2.], ry.SY.stable, ["l_gripper", "block_red"], True)
+    komo.addModeSwitch([2., -1.], ry.SY.stable, ["table", "block_red"], False)
+    komo.addModeSwitch([3., 4.], ry.SY.stable, ["l_gripper", "block_green"], True)
+    komo.addModeSwitch([4., -1.], ry.SY.stable, ["table", "block_green"], False)
+    komo.addModeSwitch([5., 6.], ry.SY.stable, ["l_gripper", "block_blue"], True)
+    
+    # Red #
+    red_pos_x = np.cos(center_phi) * block_size_z * .5 + center_x
+    red_pos_y = -np.sin(center_phi) * block_size_z * .5 + center_y
+
+    komo.addObjective([1.], ry.FS.negDistance, ["l_gripper", "block_red"], ry.OT.ineq, [-1e1], [.0])
+    komo.addObjective([1.], ry.FS.vectorZ, ["l_gripper"], ry.OT.eq, [1e1], [0., 0., 1.])
+    komo.addObjective([2.], ry.FS.vectorZ, ["block_red"], ry.OT.eq, [1e1], [0., 0., 1.])
+    komo.addObjective([2.], ry.FS.position, ["block_red"], ry.OT.eq, [1e1, 1e1, 0], [red_pos_x, red_pos_y, 0.])
+    komo.addObjective([2.], ry.FS.negDistance, ["table", "block_red"], ry.OT.eq, [1e1], [-slack])
+
+    # Green #
+    green_pos_x = -np.cos(center_phi) * block_size_z * .5 + center_x
+    green_pos_y = np.sin(center_phi) * block_size_z * .5 + center_y
+    
+    komo.addObjective([3.], ry.FS.negDistance, ["l_gripper", "block_green"], ry.OT.ineq, [-1e1], [.0])
+    komo.addObjective([3.], ry.FS.vectorZ, ["l_gripper"], ry.OT.eq, [1e1], [0., 0., 1.])
+    komo.addObjective([4.], ry.FS.vectorZ, ["block_green"], ry.OT.eq, [1e1], [0., 0., 1.])
+    komo.addObjective([4.], ry.FS.position, ["block_green"], ry.OT.eq, [1e1, 1e1, 0], [green_pos_x, green_pos_y, 0.])
+    komo.addObjective([4.], ry.FS.negDistance, ["table", "block_green"], ry.OT.eq, [1e1], [-slack])
+
+    # Blue #
+    komo.addObjective([5.], ry.FS.negDistance, ["l_gripper", "block_blue"], ry.OT.ineq, [-1e1], [.0])
+    komo.addObjective([6.], ry.FS.scalarProductZZ, ["table", "block_blue"], ry.OT.eq, [1e1], [0.])
+    komo.addObjective([6.], ry.FS.vectorY, ["block_blue"], ry.OT.eq, [1e1], [0., 0., 1.])
+    komo.addObjective([6.], ry.FS.position, ["block_blue"], ry.OT.eq, [1e1, 1e1, 0], [center_x, center_y, 0.])
+    komo.addObjective([6.], ry.FS.scalarProductXZ, ["table", "block_blue"], ry.OT.eq, [1e2], [np.cos(center_phi)])
+    komo.addObjective([6.], ry.FS.negDistance, ["block_red", "block_blue"], ry.OT.eq, [1e1], [-slack])
+    
+    return komo
+
+def gen_initial_guess(initial: BridgeState):
+    return {
+        "center_x": .2, # BBO initial value
+        "center_y": .2,
+        "center_phi": .0,
+        "slack": .03,
+    }
+```

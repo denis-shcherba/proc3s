@@ -9,8 +9,9 @@ import robotic as ry
 from typing import List, Tuple
 
 from shapely.geometry import Point
-from vtamp.environments.utils import Action, Environment, State, Task
 import vtamp.environments.bridge.manipulation as manip
+from vtamp.environments.bridge.simulator import Simulator
+from vtamp.environments.utils import Action, Environment, State, Task
 from dataclasses import dataclass, field
 
 log = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ class Frame:
 
 @dataclass
 class BridgeState(State):
+    config: ry.Config
     frames: List[Frame] = field(default_factory=list)
 
     def __str__(self):
@@ -110,6 +112,48 @@ def pick_place_manipulation(C: ry.Config,
     return M
 
 
+def straight_push(C: ry.Config, start: np.ndarray, end: np.ndarray) -> ry.KOMO:
+
+    delta = end - start
+    delta /= np.linalg.norm(delta)
+
+    table = C.getFrame("table")
+    height = table.getPosition()[2] + table.getSize()[2]*.5 + .05
+    C.addFrame("start_frame") \
+        .setPosition([start[0], start[1], height]) \
+        .setShape(ry.ST.marker, [.05]) \
+        .setColor([1., 0., 0.])
+    C.addFrame("end_frame") \
+        .setPosition([end[0], end[1], height]) \
+        .setShape(ry.ST.marker, [.05]) \
+        .setColor([0., 0., 1.])
+    
+    qHome = C.getJointState()
+
+    komo = ry.KOMO()
+    komo.setConfig(C, False)
+    komo.setTiming(3, 32, 3, 2)
+
+    komo.addControlObjective([], 0, 1e-1)
+    komo.addControlObjective([], 1, 1e-1)
+    komo.addControlObjective([], 2, 1e-1)
+
+    komo.addObjective([], ry.FS.jointLimits, [], ry.OT.ineq, [1e0])
+    komo.addObjective([], ry.FS.negDistance, ["l_palm", "table"], ry.OT.ineq, [1e1], [-.01])
+
+    komo.addObjective([1., 2.], ry.FS.negDistance, ["l_palm", "table"], ry.OT.ineq, [1e1], [-.07])
+    komo.addObjective([1., 2.], ry.FS.vectorZ, ["l_gripper"], ry.OT.eq, [1e1], [0., 0., 1.])
+    komo.addObjective([1., 2.], ry.FS.vectorY, ["l_gripper"], ry.OT.eq, [1e1], delta)
+
+    mat = np.eye(3) - np.outer(delta, delta)
+    komo.addObjective([1., 2.5], ry.FS.positionDiff, ["l_gripper", "start_frame"], ry.OT.eq, mat)
+    komo.addObjective([1.], ry.FS.positionDiff, ["l_gripper", "start_frame"], ry.OT.eq, [1e1])
+    komo.addObjective([2.], ry.FS.positionDiff, ["l_gripper", "end_frame"], ry.OT.eq, [1e1])
+    komo.addObjective([2.5], ry.FS.positionDiff, ["l_gripper", "start_frame"], ry.OT.eq, [1e1])
+    komo.addObjective([3.], ry.FS.qItself, [], ry.OT.eq, [1e1], qHome)
+    
+    return komo
+
 
 class BridgeEnv(Environment):
     def __init__(self, task: Task, **kwargs):
@@ -126,6 +170,7 @@ class BridgeEnv(Environment):
         self.qHome = self.C.getJointState()
 
     def step(self, action: Action, vis: bool=True):
+        
         info = {"constraint_violations": []}
 
         if not self.feasible:
@@ -211,7 +256,31 @@ class BridgeEnv(Environment):
 
                 if self.feasible:
                     break
-        
+
+        if action.name == "push_motion":
+            assert self.to_be_picked == None
+            self.feasible = False
+
+            start = np.array(action.params[:2])
+            end = np.array(action.params[:4])
+
+            komo = straight_push(self.C, start, end)
+            sol = ry.NLP_Solver()
+            sol.setProblem(komo.nlp())
+            sol.setOptions(damping=1e-1, verbose=0, stopTolerance=1e-3, maxLambda=100., stopInners=20, stopEvals=200)
+            self.ret = sol.solve()
+            if self.ret.feasible:
+                self.path =komo.getPath()
+                self.feasible = True
+
+                C2 = ry.Config()
+                C2.addConfigurationCopy(self.C)
+                sim = Simulator(C2)
+                xs, qs, xdots, qdots = sim.run_trajectory(self.path, 2, real_time=self.sim_rt, close_gripper=True)
+                
+                self.C.setJointState(qs[-1])
+                self.C.setFrameState(xs[-1])
+
         else:
             raise NotImplementedError
         
@@ -223,18 +292,57 @@ class BridgeEnv(Environment):
         self.state = self.getState()
         return self.state, False, 0, info
     
+    def step_komo(self, komo: ry.KOMO, vis: bool=True):
+        info = {"constraint_violations": []}
+
+        if not self.feasible:
+            self.C.view()
+            self.t = self.t + 1
+            return self.state, False, 0, info
+        
+        self.feasible = False
+
+        sol = ry.NLP_Solver()
+        sol.setProblem(komo.nlp())
+        sol.setOptions(damping=1e-1, verbose=0, stopTolerance=1e-3, maxLambda=100., stopInners=20, stopEvals=200)
+        ret = sol.solve()
+        
+        self.feasible = ret.feasible
+        if not self.feasible:
+            print(komo.report())
+            print("KOMO not feasible")
+            info["constraint_violations"].append("idk")
+
+        C_state = komo.getPathFrames()[-1]
+        q = komo.getPath()[-1]
+        self.C.setFrameState(C_state)
+        self.C.setJointState(q)
+        
+        if vis:
+            komo.view_play(False, delay=.1)
+        
+        self.C.view()
+        self.t = self.t + 1
+        self.state = self.getState()
+        return self.state, False, 0, info
+    
     @staticmethod
     def sample_twin(real_env: BridgeEnv, obs, task: Task, **kwargs) -> BridgeEnv:
         twin = BridgeEnv(task)
         twin.C = ry.Config()
         twin.C.addConfigurationCopy(real_env.C)
-        twin.state = copy.deepcopy(obs)
-        twin.initial_state = copy.deepcopy(obs)
+        twin.state.frames = copy.deepcopy(obs.frames)
+        twin.state.config = ry.Config()
+        twin.state.config.addConfigurationCopy(obs.config)
+        twin.state.config.view()
+        twin.initial_state.frames = copy.deepcopy(obs.frames)
+        twin.initial_state.config = ry.Config()
+        twin.initial_state.config.addConfigurationCopy(obs.config)
+        twin.initial_state.config.view()
         return twin
 
     def reset(self):
-        relevant_frames = ["block_red", "block_green", "block_blue"]
-        for f in relevant_frames:
+        for f in self.task.relevant_frames:
             self.C.attach("table", f)
         q = self.base_config.getJointState()
         C_state = self.base_config.getFrameState()
@@ -250,11 +358,10 @@ class BridgeEnv(Environment):
     
     def getState(self):
 
-        state = BridgeState()
+        state = BridgeState(self.C)
         state.frames = []
         
-        relevant_frames = ["block_red", "block_green", "block_blue"]
-        for f in relevant_frames:
+        for f in self.task.relevant_frames:
         
             C_frame = self.C.getFrame(f)
         
@@ -274,4 +381,7 @@ class BridgeEnv(Environment):
     def compute_cost(self):
         self.C.view()
         cost = self.task.get_cost(self)
+        if not self.feasible:
+            cost += 100
         return cost
+    

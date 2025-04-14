@@ -37,5 +37,6 @@ setup(
         "robotic==0.2.4",
         "rowan==1.3.2",
         "cma==4.0.0",
+        "line_profiler==4.2.0",
     ],
 )

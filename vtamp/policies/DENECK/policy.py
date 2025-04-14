@@ -35,6 +35,7 @@ def bbo_on_motion_plan(
     initial_state: State,
     plan_gen: Callable[[List[Union[int, float]]], List[Action]],
     domains_gen: List[Sampler],
+    use_komo: bool=False,
     max_evals: int = 100,
 ) -> Union[List[Action], str]:
     
@@ -52,11 +53,14 @@ def bbo_on_motion_plan(
         env.reset()
         # env.C.view(True, "Before")
         ground_plan = plan_gen(initial_state, *input_vec)
-        for action in ground_plan:
-            env.step(action, vis=False)
+        if use_komo:
+            env.step_komo(ground_plan, vis=False)
+        else:
+            for action in ground_plan:
+                env.step(action, vis=False)
         cost = env.compute_cost()
         #################################
-        if cost == 1.11:
+        if cost > 100:
             evals_infeasible.append(input_vec)
         else:
             evals_feasible.append(input_vec)
@@ -72,7 +76,7 @@ def bbo_on_motion_plan(
     bbo_options = {
         'popsize': 20,        # Number of candidate solutions per generation
         'maxiter': 500,       # Maximum number of generations/iterations
-        'maxfevals': 100,   # Maximum number of function evaluations
+        'maxfevals': 10_000,   # Maximum number of function evaluations
         'tolfun': 1e-4,       # Stop if the change in function value is small
         'tolx': 1e-5,         # Stop if the step size (sigma) is very small
         'CMA_elitist': True,      # Keep the best from last generation
@@ -124,12 +128,14 @@ class DENECK(Policy):
         seed=0,
         max_evals=0,
         use_cache=True,
+        use_komo=False,
         **kwargs,
     ):
         self.twin = twin
         self.seed = seed
         self.max_feedbacks = max_feedbacks
         self.max_evals = max_evals
+        self.use_komo = use_komo
 
         self.use_cache = use_cache
 
@@ -153,11 +159,18 @@ class DENECK(Policy):
 
             if ground_plan is None:
                 return None, statistics
+            elif self.use_komo:
+                log.info("Found plan: {}".format(ground_plan))
+                self.plan = ground_plan
+                return self.plan, statistics
             else:
                 log.info("Found plan: {}".format(ground_plan))
                 self.plan = ground_plan[1:]
                 return ground_plan[0], statistics
 
+        elif self.use_komo:
+            return self.plan, statistics
+        
         elif len(self.plan) > 0:
             next_action = self.plan[0]
             self.plan = self.plan[1:]
@@ -183,7 +196,8 @@ class DENECK(Policy):
         # TODO: use_cache
         # llm_response, llm_query_time = query_llm(chat_history, seed=0)
         #####################################################
-        llm_response = open("./triangle_hlvlsr_bbo.txt", 'r').read()
+        llm_response = open("./multibridge_hlvlsr_bbo.txt", 'r').read()
+        # llm_response = open("./bridge_hlvlsr_bbo.txt", 'r').read()
         llm_query_time = 0
         #####################################################
         
@@ -199,6 +213,7 @@ class DENECK(Policy):
             llm_code = parse_code(llm_response)
             exec(llm_code, globals())
             func = globals()[FUNC_NAME]
+            print(llm_code)
             if FUNC_DOMAIN in globals():
                 domain = globals()[FUNC_DOMAIN]
                 ground_plan, failure_message, bbo_evals = bbo_on_motion_plan(
@@ -207,6 +222,7 @@ class DENECK(Policy):
                     func,
                     domain,
                     max_evals=self.max_evals,
+                    use_komo=self.use_komo,
                 )
             else:
                 log.info("No variables given to optimize. Continuing without BBO.")

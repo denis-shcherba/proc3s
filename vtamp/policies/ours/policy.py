@@ -178,7 +178,8 @@ class Ours(Policy):
                 log.info("Querying LLM")
                 # llm_response, llm_query_time = query_llm(chat_history, seed=self.seed)
                 #####################################################
-                llm_response = open("./triangle_hlvlsr_proc3s.txt", 'r').read()
+                # llm_response = open("./triangle_hlvlsr_proc3s.txt", 'r').read()
+                llm_response = open("./multibridge_hlvlsr_proc3s.txt", 'r').read()
                 llm_query_time = 0
                 #####################################################
             print(llm_response)

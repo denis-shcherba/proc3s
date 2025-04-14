@@ -13,9 +13,9 @@ env:
   stability_check: False
   gui: true
 task:
-  _target_: vtamp.environments.bridge.tasks.BuildBridge
-  goal_str: "Build a bridge. A bridge is defined as two parallel vertical blocks, and one horizontal block on top of them."
-  task_name: BuildBridge
+  _target_: vtamp.environments.bridge.tasks.PushRed
+  goal_str: "Push the red block to the taget pose."
+  task_name: PushRed
 policy:
   _target_: vtamp.policies.DENECK.policy.DENECK
   max_feedbacks: 0

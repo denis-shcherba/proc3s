@@ -1,0 +1,30 @@
+```python
+def gen_plan(state: BridgeState,
+             a_start_x: float, a_start_y: float,
+             a_end_x:   float, a_end_y:   float,
+             b_start_x: float, b_start_y: float,
+             b_end_x:   float, b_end_y:   float):
+    
+    # Build the bridge
+    actions = []
+
+    # First Push #
+    actions.append(Action("push_motion", [a_start_x, a_start_y, a_end_x, a_end_y]))
+
+    # Second Push #
+    actions.append(Action("push_motion", [b_start_x, b_start_y, b_end_x, b_end_y]))
+
+    return actions
+
+def gen_initial_guess(initial: BridgeState):
+    return {
+        "a_start_x": .2, # BBO initial value
+        "a_start_y": .4,
+        "a_end_x": .0,
+        "a_end_y": .0,
+        "b_start_x": .2, # BBO initial value
+        "b_start_y": -.4,
+        "b_end_x": .0,
+        "b_end_y": .0,
+    }
+```

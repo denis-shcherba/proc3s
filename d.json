@@ -1,0 +1,568 @@
+{
+    "o4": {
+        "name": "F_qLimits",
+        "frames": [
+            "#65"
+        ],
+        "err": 0.0,
+        "order": 0.0,
+        "type": "ineq",
+        "scale": [
+            1.0
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o8": {
+        "name": "F_LinAngVel",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.0,
+        "order": 2.0,
+        "type": "eq",
+        "scale": [
+            1.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o7": {
+        "name": "F_PoseRel",
+        "frames": [
+            "block_red",
+            "l_gripper"
+        ],
+        "err": 1.9262369477246466e-13,
+        "order": 1.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o12": {
+        "name": "F_PairCollision",
+        "frames": [
+            "table",
+            "block_red"
+        ],
+        "err": 0.0032498506535985454,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "target": [
+            -0.005
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o0": {
+        "name": "F_qItself",
+        "frames": [
+            "#14"
+        ],
+        "err": 0.004318510908907281,
+        "order": 0.0,
+        "type": "sos",
+        "scale": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o10": {
+        "name": "F_Vector",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.0058234326537111745,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "target": [
+            0.0,
+            0.0,
+            1.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o11": {
+        "name": "F_Position",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.01818955705190084,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            10.0,
+            10.0,
+            0.0
+        ],
+        "target": [
+            0.36,
+            0.3,
+            0.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o1": {
+        "name": "F_qItself",
+        "frames": [
+            "#14"
+        ],
+        "err": 0.029100907143623976,
+        "order": 1.0,
+        "type": "sos",
+        "scale": [
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o3": {
+        "name": "F_AccumulatedCollisions",
+        "frames": [
+            "#65"
+        ],
+        "err": 0.030924392627499124,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            1.0
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o5": {
+        "name": "F_Pose",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.11915901417091979,
+        "order": 1.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "times": [
+            1.0
+        ],
+        "slices": [
+            31.0,
+            31.0
+        ]
+    },
+    "o9": {
+        "name": "F_PairCollision",
+        "frames": [
+            "l_gripper",
+            "block_red"
+        ],
+        "err": 0.15257576698705605,
+        "order": 0.0,
+        "type": "ineq",
+        "scale": [
+            -10.0
+        ],
+        "target": [
+            0.02
+        ],
+        "times": [
+            1.0
+        ],
+        "slices": [
+            31.0,
+            31.0
+        ]
+    },
+    "o6": {
+        "name": "F_LinAngVel",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.3672562446139765,
+        "order": 2.0,
+        "type": "eq",
+        "scale": [
+            1.0
+        ],
+        "times": [
+            1.0
+        ],
+        "slices": [
+            31.0,
+            31.0
+        ]
+    },
+    "o2": {
+        "name": "F_qItself",
+        "frames": [
+            "#14"
+        ],
+        "err": 12.953054248989005,
+        "order": 2.0,
+        "type": "sos",
+        "scale": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "totals": {
+        "sos": 12.986473667041537,
+        "ineq": 0.15257576698705605,
+        "eq": 0.5446024917717985,
+        "f": 0.0
+    }
+}
+{
+    "o4": {
+        "name": "F_qLimits",
+        "frames": [
+            "#65"
+        ],
+        "err": 0.0,
+        "order": 0.0,
+        "type": "ineq",
+        "scale": [
+            1.0
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o8": {
+        "name": "F_LinAngVel",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.0,
+        "order": 2.0,
+        "type": "eq",
+        "scale": [
+            1.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o7": {
+        "name": "F_PoseRel",
+        "frames": [
+            "block_red",
+            "l_gripper"
+        ],
+        "err": 1.9262369477246466e-13,
+        "order": 1.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o12": {
+        "name": "F_PairCollision",
+        "frames": [
+            "table",
+            "block_red"
+        ],
+        "err": 0.0032498506535985454,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "target": [
+            -0.005
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o0": {
+        "name": "F_qItself",
+        "frames": [
+            "#14"
+        ],
+        "err": 0.004318510908907281,
+        "order": 0.0,
+        "type": "sos",
+        "scale": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o10": {
+        "name": "F_Vector",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.0058234326537111745,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "target": [
+            0.0,
+            0.0,
+            1.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o11": {
+        "name": "F_Position",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.01818955705190084,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            10.0,
+            10.0,
+            0.0
+        ],
+        "target": [
+            0.36,
+            0.3,
+            0.0
+        ],
+        "times": [
+            2.0
+        ],
+        "slices": [
+            63.0,
+            63.0
+        ]
+    },
+    "o1": {
+        "name": "F_qItself",
+        "frames": [
+            "#14"
+        ],
+        "err": 0.029100907143623976,
+        "order": 1.0,
+        "type": "sos",
+        "scale": [
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o3": {
+        "name": "F_AccumulatedCollisions",
+        "frames": [
+            "#65"
+        ],
+        "err": 0.030924392627499124,
+        "order": 0.0,
+        "type": "eq",
+        "scale": [
+            1.0
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "o5": {
+        "name": "F_Pose",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.11915901417091979,
+        "order": 1.0,
+        "type": "eq",
+        "scale": [
+            10.0
+        ],
+        "times": [
+            1.0
+        ],
+        "slices": [
+            31.0,
+            31.0
+        ]
+    },
+    "o9": {
+        "name": "F_PairCollision",
+        "frames": [
+            "l_gripper",
+            "block_red"
+        ],
+        "err": 0.15257576698705605,
+        "order": 0.0,
+        "type": "ineq",
+        "scale": [
+            -10.0
+        ],
+        "target": [
+            0.02
+        ],
+        "times": [
+            1.0
+        ],
+        "slices": [
+            31.0,
+            31.0
+        ]
+    },
+    "o6": {
+        "name": "F_LinAngVel",
+        "frames": [
+            "block_red"
+        ],
+        "err": 0.3672562446139765,
+        "order": 2.0,
+        "type": "eq",
+        "scale": [
+            1.0
+        ],
+        "times": [
+            1.0
+        ],
+        "slices": [
+            31.0,
+            31.0
+        ]
+    },
+    "o2": {
+        "name": "F_qItself",
+        "frames": [
+            "#14"
+        ],
+        "err": 12.953054248989005,
+        "order": 2.0,
+        "type": "sos",
+        "scale": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "times": [],
+        "slices": [
+            0.0,
+            63.0
+        ]
+    },
+    "totals": {
+        "sos": 12.986473667041537,
+        "ineq": 0.15257576698705605,
+        "eq": 0.5446024917717985,
+        "f": 0.0
+    }
+}

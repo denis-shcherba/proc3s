@@ -2,25 +2,24 @@ defaults:
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 
-name: deneck_bridge
+name: proc3s_bridge
 render: true
 vis_debug: false
-seed: 1
-use_komo: false
+seed: 10000
 max_env_steps: 50
 env:
   _target_: vtamp.environments.bridge.env.BridgeEnv
   stability_check: False
   gui: true
 task:
-  _target_: vtamp.environments.bridge.tasks.BuildBridge
-  goal_str: "Build a bridge. A bridge is defined as two parallel vertical blocks, and one horizontal block on top of them."
-  task_name: BuildBridge
+  _target_: vtamp.environments.bridge.tasks.BuildMultiBridge
+  goal_str: "Build a multiple bridges. A bridge is defined as two parallel vertical blocks, and one horizontal block on top of them."
+  task_name: BuildMultiBridge
 policy:
-  _target_: vtamp.policies.DENECK.policy.DENECK
-  max_feedbacks: 0
+  _target_: vtamp.policies.ours.policy.Ours
+  max_feedbacks: 5
   max_csp_samples: 10000
   gaussian_blur: false
-  method: deneck
+  method: ours
 updater:
   _target_: vtamp.environments.utils.DefaultUpdater

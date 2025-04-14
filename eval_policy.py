@@ -74,12 +74,14 @@ def main(cfg: OmegaConf):
         random.seed(cfg["seed"])
         np.random.seed(cfg["seed"])
 
+    use_komo = cfg.get("use_komo")
+
     log.info("Setting up environment and policy...")
     print(cfg)
     task: Task = hydra.utils.instantiate(cfg.task)
     updater: Updater = hydra.utils.instantiate(cfg.updater)
     env: Environment = hydra.utils.instantiate(
-        cfg.env, task=task, render=cfg.render and not cfg.vis_debug
+        cfg.env, task=task, render=cfg.render and not cfg.vis_debug, use_komo=use_komo,
     )
     obs = env.reset()
 
@@ -89,29 +91,23 @@ def main(cfg: OmegaConf):
         env, belief, task, render=cfg.vis_debug
     )
     policy: Policy = hydra.utils.instantiate(
-        cfg.policy, twin=twin_env, seed=cfg["seed"]
+        cfg.policy, twin=twin_env, seed=cfg["seed"], use_komo=use_komo,
     )
 
     statistics = {"execution_time": 0, "planning_time": 0}
-    for i in range(cfg.get("max_env_steps")):
-        log.info("Step " + str(i))
+    
+    if use_komo:
         goal = env.task.get_goal()
         log.info("Goal: " + str(goal))
         belief = updater.update(obs)
         log.info("Scene: " + str(belief))
         st = time.time()
-        action, step_statistics = policy.get_action(belief, goal)
-        for k, v in step_statistics.items():
-            statistics["step_{}_{}".format(i, k)] = v
+        komo, step_statistics = policy.get_action(belief, goal)
         statistics["planning_time"] += time.time() - st
-        log.info("Action: " + str(action))
-        if action is None:
-            break
+        log.info("KOMO: " + str(komo))
 
         st = time.time()
-        obs, reward, done, info = env.step(action, vis=False)
-        for k, v in info.items():
-            statistics["step_{}_{}".format(i, k)] = v
+        obs, reward, done, info = env.step_komo(komo, vis=True)
         statistics["execution_time"] += time.time() - st
 
         if cfg.render:
@@ -120,6 +116,34 @@ def main(cfg: OmegaConf):
         log.info("Reward: " + str(reward))
         log.info("Done: " + str(done))
         log.info("Info: " + str(info))
+    else:
+        for i in range(cfg.get("max_env_steps")):
+            log.info("Step " + str(i))
+            goal = env.task.get_goal()
+            log.info("Goal: " + str(goal))
+            belief = updater.update(obs)
+            log.info("Scene: " + str(belief))
+            st = time.time()
+            action, step_statistics = policy.get_action(belief, goal)
+            for k, v in step_statistics.items():
+                statistics["step_{}_{}".format(i, k)] = v
+            statistics["planning_time"] += time.time() - st
+            log.info("Action: " + str(action))
+            if action is None:
+                break
+
+            st = time.time()
+            obs, reward, done, info = env.step(action, vis=False)
+            for k, v in info.items():
+                statistics["step_{}_{}".format(i, k)] = v
+            statistics["execution_time"] += time.time() - st
+
+            if cfg.render:
+                env.render()
+
+            log.info("Reward: " + str(reward))
+            log.info("Done: " + str(done))
+            log.info("Info: " + str(info))
 
     env.close()
     log.info("Statistics: " + str(json.dumps(statistics)))
