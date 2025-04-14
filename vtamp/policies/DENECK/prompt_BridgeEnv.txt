@@ -3,7 +3,7 @@
 
 {{{bridge_setup_code}}}
 
-{{{skill_preface}}}
+{{{skill_preface_rai}}}
 
 {{{bridge_skills_sr}}}
 
