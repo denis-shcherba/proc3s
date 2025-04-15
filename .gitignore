@@ -171,3 +171,5 @@ z.komoData
 z.komoReport.plt
 z.plotcmd
 plot.png
+output*.png
+groundtruth.png
