@@ -76,7 +76,7 @@ def bbo_on_motion_plan(
     bbo_options = {
         'popsize': 20,        # Number of candidate solutions per generation
         'maxiter': 500,       # Maximum number of generations/iterations
-        'maxfevals': 10_000,   # Maximum number of function evaluations
+        'maxfevals': 500,   # Maximum number of function evaluations
         'tolfun': 1e-4,       # Stop if the change in function value is small
         'tolx': 1e-5,         # Stop if the step size (sigma) is very small
         'CMA_elitist': True,      # Keep the best from last generation
@@ -196,8 +196,9 @@ class DENECK(Policy):
         # TODO: use_cache
         # llm_response, llm_query_time = query_llm(chat_history, seed=0)
         #####################################################
-        llm_response = open("./multibridge_hlvlsr_bbo.txt", 'r').read()
+        # llm_response = open("./multibridge_hlvlsr_bbo.txt", 'r').read()
         # llm_response = open("./bridge_hlvlsr_bbo.txt", 'r').read()
+        llm_response = open("./push_hlvlsr_bbo.txt", 'r').read()
         llm_query_time = 0
         #####################################################
         

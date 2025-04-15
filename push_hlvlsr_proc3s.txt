@@ -38,15 +38,16 @@ def gen_plan(state: BridgeState,
 
     return actions
 
-def gen_initial_guess(initial: BridgeState):
+
+def gen_domain(initial: BridgeState):
     return {
-        "a_start_x_offset": .0, # BBO initial value
-        "a_start_y_offset": .0,
-        "a_end_x_offset": .0,
-        "a_end_y_offset": .0,
-        "b_start_x_offset": .0,
-        "b_start_y_offset": .0,
-        "b_end_x_offset": .0,
-        "b_end_y_offset": .0,
+        "a_start_x_offset": ContinuousSampler(-0.5, 0.5), # BBO initial value
+        "a_start_y_offset": ContinuousSampler(-0.5, 0.5),
+        "a_end_x_offset": ContinuousSampler(-0.5, 0.5),
+        "a_end_y_offset": ContinuousSampler(-0.5, 0.5),
+        "b_start_x_offset": ContinuousSampler(-0.5, 0.5),
+        "b_start_y_offset": ContinuousSampler(-0.5, 0.5),
+        "b_end_x_offset": ContinuousSampler(-0.5, 0.5),
+        "b_end_y_offset": ContinuousSampler(-0.5, 0.5),
     }
 ```

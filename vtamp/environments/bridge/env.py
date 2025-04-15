@@ -114,11 +114,14 @@ def pick_place_manipulation(C: ry.Config,
 
 def straight_push(C: ry.Config, start: np.ndarray, end: np.ndarray) -> ry.KOMO:
 
+    table = C.getFrame("table")
+    height = table.getPosition()[2] + table.getSize()[2]*.5 + .05
+
+    start = np.append(start, height)
+    end = np.append(end, height)
     delta = end - start
     delta /= np.linalg.norm(delta)
 
-    table = C.getFrame("table")
-    height = table.getPosition()[2] + table.getSize()[2]*.5 + .05
     C.addFrame("start_frame") \
         .setPosition([start[0], start[1], height]) \
         .setShape(ry.ST.marker, [.05]) \
@@ -248,7 +251,7 @@ class BridgeEnv(Environment):
                                 self.C.setJointState(path2[-1])
                                 self.C.attach("table", frame_name)
                                 self.C.view()
-                                time.sleep(.05) # This is to kind of see that the last block in Bridge building also gets placed.
+                                # time.sleep(.05) # This is to kind of see that the last block in Bridge building also gets placed.
 
                             self.feasible = True
                             self.to_be_picked = None
@@ -260,23 +263,26 @@ class BridgeEnv(Environment):
         if action.name == "push_motion":
             assert self.to_be_picked == None
             self.feasible = False
+            np.random.seed(42)
 
             start = np.array(action.params[:2])
-            end = np.array(action.params[:4])
+            end = np.array(action.params[2:4])
 
             komo = straight_push(self.C, start, end)
             sol = ry.NLP_Solver()
             sol.setProblem(komo.nlp())
             sol.setOptions(damping=1e-1, verbose=0, stopTolerance=1e-3, maxLambda=100., stopInners=20, stopEvals=200)
             self.ret = sol.solve()
+
+            self.C.delFrame("start_frame")
+            self.C.delFrame("end_frame")
+            
             if self.ret.feasible:
-                self.path =komo.getPath()
+                self.path = komo.getPath()
                 self.feasible = True
 
-                C2 = ry.Config()
-                C2.addConfigurationCopy(self.C)
-                sim = Simulator(C2)
-                xs, qs, xdots, qdots = sim.run_trajectory(self.path, 2, real_time=self.sim_rt, close_gripper=True)
+                sim = Simulator(self.C)
+                xs, qs, xdots, qdots = sim.run_trajectory(self.path, 2, real_time=vis, close_gripper=False)
                 
                 self.C.setJointState(qs[-1])
                 self.C.setFrameState(xs[-1])
@@ -381,7 +387,7 @@ class BridgeEnv(Environment):
     def compute_cost(self):
         self.C.view()
         cost = self.task.get_cost(self)
-        if not self.feasible:
-            cost += 100
+        # if not self.feasible:
+        #     cost += 100
         return cost
     

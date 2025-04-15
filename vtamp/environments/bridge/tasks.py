@@ -50,22 +50,23 @@ def create_config_big_red() -> ry.Config:
     C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
 
     C.delFrame("panda_collCameraWrist")
-    C.getFrame("table").setShape(ry.ST.ssBox, size=[1., 1., .1, .02])
+    C.getFrame("table").setShape(ry.ST.ssBox, size=[2., 2., .1, .02])
 
     C.addFrame("big_red_block") \
-        .setPosition([.4, .4, .8]) \
+        .setPosition([-.2, .3, .8]) \
         .setQuaternion(rowan.from_euler(0., 0., -np.pi*1.5, convention="xyz")) \
         .setShape(ry.ST.ssBox, size=[.2, .2, .2, 0.005]) \
+        .setColor([.8, .2, .25]) \
         .setContact(1) \
         .setMass(.1)
     
     C.addFrame("target_pose") \
-        .setPosition([.4, .4, .8]) \
+        .setPosition([.4, .3, .8]) \
         .setQuaternion(rowan.from_euler(0., 0., np.pi*1.2, convention="xyz")) \
         .setShape(ry.ST.ssBox, size=[.2, .2, .2, 0.005]) \
         .setColor([0., 1., 0., .1])
     
-    C.view(True)
+    # C.view(True)
     return C
 
 
@@ -271,13 +272,17 @@ class PushRed(Task):
     
     def get_cost(self, env: BridgeEnv):
 
-        pos_diff, _ = env.C.eval(ry.FS.positionDiff, ["big_red_block", "target_pos"])
-        pos_cost = np.linalg.norm(pos_diff)**2
-        
-        rot_diff, _ = env.C.eval(ry.FS.quaternionDiff, ["big_red_block", "target_pos"])
-        rot_cost = np.linalg.norm(rot_diff)**2
+        box_frame = env.C.getFrame("big_red_block")
+        target_frame = env.C.getFrame("target_pose")
 
-        total_cost = pos_cost + rot_cost
+        pos_diff, _ = env.C.eval(ry.FS.positionDiff, ["big_red_block", "target_pose"])
+        pos_cost = (np.linalg.norm(pos_diff)*10)**2
+        
+        q_diff = rowan.multiply(rowan.conjugate(box_frame.getQuaternion()), target_frame.getQuaternion())
+        angle = 2 * np.arccos(np.clip(q_diff[0], -1.0, 1.0))
+        rot_cost = angle**2
+
+        total_cost = pos_cost*.1 + rot_cost*.1
         
         return total_cost
     

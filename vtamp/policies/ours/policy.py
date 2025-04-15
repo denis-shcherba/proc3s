@@ -63,17 +63,25 @@ def rejection_sample_csp(
         constraint_violated = False
         for ai, action in enumerate(ground_plan):
             _, _, _, info = env.step(action, vis=False)
-            if len(info["constraint_violations"]) > 0:
-                violation_str = [
-                    "Step {}, Action {}, Violation: {}".format(
-                        ai, action.name, violation
-                    )
-                    for violation in info["constraint_violations"]
-                ]
-                violation_modes.update(violation_str)
-                constraint_violated = True
-                log.info(f"Constraint violation " + str(info["constraint_violations"]))
+            cost = env.compute_cost()
+            print(f"Cost: {cost}")
+            if cost < 0.02:
+                print("Solved!")
                 break
+            else:
+                constraint_violated = True
+
+            # if len(info["constraint_violations"]) > 0 or env.compute_cost() < 0.02:
+            #     violation_str = [
+            #         "Step {}, Action {}, Violation: {}".format(
+            #             ai, action.name, violation
+            #         )
+            #         for violation in info["constraint_violations"]
+            #     ]
+            #     violation_modes.update(violation_str)
+            #     constraint_violated = True
+            #     log.info(f"Constraint violation " + str(info["constraint_violations"]))
+            #     break
         if not constraint_violated:
             return ground_plan, None, i
 
@@ -179,7 +187,8 @@ class Ours(Policy):
                 # llm_response, llm_query_time = query_llm(chat_history, seed=self.seed)
                 #####################################################
                 # llm_response = open("./triangle_hlvlsr_proc3s.txt", 'r').read()
-                llm_response = open("./multibridge_hlvlsr_proc3s.txt", 'r').read()
+                # llm_response = open("./multibridge_hlvlsr_proc3s.txt", 'r').read()
+                llm_response = open("./push_hlvlsr_proc3s.txt", 'r').read()
                 llm_query_time = 0
                 #####################################################
             print(llm_response)
